@@ -20,7 +20,8 @@ export const createOrder = async (req: any, res: Response) => {
     await order.save();
 
     // Notify Notification Service asynchronously
-    axios.post('http://127.0.0.1:5007/api/notifications/send', {
+    const notifUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007';
+    axios.post(`${notifUrl}/api/notifications/send`, {
       userId: req.user._id,
       type: 'ORDER_CREATED',
       payload: { orderId: order._id, totalAmount }
@@ -44,7 +45,8 @@ export const getUserOrders = async (req: any, res: Response) => {
 export const getVendorOrders = async (req: any, res: Response) => {
   try {
     // Determine business ID via HTTP to business-service
-    const response = await axios.get('http://127.0.0.1:5002/api/business/me', {
+    const businessUrl = process.env.BUSINESS_SERVICE_URL || 'http://127.0.0.1:5002';
+    const response = await axios.get(`${businessUrl}/api/business/me`, {
       headers: { Authorization: req.header('Authorization') }
     });
     const businessId = response.data._id;
@@ -68,7 +70,8 @@ export const updateOrderStatus = async (req: any, res: Response) => {
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
     // Notify status update
-    axios.post('http://127.0.0.1:5007/api/notifications/send', {
+    const notifUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007';
+    axios.post(`${notifUrl}/api/notifications/send`, {
       userId: order.userId,
       type: 'ORDER_UPDATED',
       payload: { orderId: order._id, status }

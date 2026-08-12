@@ -7,14 +7,14 @@ const app = express();
 app.use(cors());
 
 // Microservice Routes
-app.use('/api/auth', createProxyMiddleware({ target: 'http://127.0.0.1:5001', changeOrigin: true, pathRewrite: { '^/api/auth': '/auth' } }) as express.RequestHandler);
-app.use('/api/business', createProxyMiddleware({ target: 'http://127.0.0.1:5002', changeOrigin: true, pathRewrite: { '^/api/business': '/business' } }) as express.RequestHandler);
-app.use('/api/products', createProxyMiddleware({ target: 'http://127.0.0.1:5003', changeOrigin: true, pathRewrite: { '^/api/products': '/products' } }) as express.RequestHandler);
-app.use('/api/admin', createProxyMiddleware({ target: 'http://127.0.0.1:5004', changeOrigin: true, pathRewrite: { '^/api/admin': '/admin' } }) as express.RequestHandler);
-app.use('/api/orders', createProxyMiddleware({ target: 'http://127.0.0.1:5005', changeOrigin: true, pathRewrite: { '^/api/orders': '/orders' } }) as express.RequestHandler);
-app.use('/api/payments', createProxyMiddleware({ target: 'http://127.0.0.1:5006', changeOrigin: true, pathRewrite: { '^/api/payments': '/payments' } }) as express.RequestHandler);
-app.use('/api/notifications', createProxyMiddleware({ target: 'http://127.0.0.1:5007', changeOrigin: true, pathRewrite: { '^/api/notifications': '/notifications' } }) as express.RequestHandler);
-app.use('/api/reviews', createProxyMiddleware({ target: 'http://127.0.0.1:5008', changeOrigin: true, pathRewrite: { '^/api/reviews': '/reviews' } }) as express.RequestHandler);
+app.use('/api/auth', createProxyMiddleware({ target: process.env.AUTH_SERVICE_URL || 'http://127.0.0.1:5001', changeOrigin: true, pathRewrite: { '^/api/auth': '/auth' } }) as express.RequestHandler);
+app.use('/api/business', createProxyMiddleware({ target: process.env.BUSINESS_SERVICE_URL || 'http://127.0.0.1:5002', changeOrigin: true, pathRewrite: { '^/api/business': '/business' } }) as express.RequestHandler);
+app.use('/api/products', createProxyMiddleware({ target: process.env.PRODUCT_SERVICE_URL || 'http://127.0.0.1:5003', changeOrigin: true, pathRewrite: { '^/api/products': '/products' } }) as express.RequestHandler);
+app.use('/api/admin', createProxyMiddleware({ target: process.env.ADMIN_SERVICE_URL || 'http://127.0.0.1:5004', changeOrigin: true, pathRewrite: { '^/api/admin': '/admin' } }) as express.RequestHandler);
+app.use('/api/orders', createProxyMiddleware({ target: process.env.ORDER_SERVICE_URL || 'http://127.0.0.1:5005', changeOrigin: true, pathRewrite: { '^/api/orders': '/orders' } }) as express.RequestHandler);
+app.use('/api/payments', createProxyMiddleware({ target: process.env.PAYMENT_SERVICE_URL || 'http://127.0.0.1:5006', changeOrigin: true, pathRewrite: { '^/api/payments': '/payments' } }) as express.RequestHandler);
+app.use('/api/notifications', createProxyMiddleware({ target: process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007', changeOrigin: true, pathRewrite: { '^/api/notifications': '/notifications' } }) as express.RequestHandler);
+app.use('/api/reviews', createProxyMiddleware({ target: process.env.REVIEW_SERVICE_URL || 'http://127.0.0.1:5008', changeOrigin: true, pathRewrite: { '^/api/reviews': '/reviews' } }) as express.RequestHandler);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'API Gateway is running' });

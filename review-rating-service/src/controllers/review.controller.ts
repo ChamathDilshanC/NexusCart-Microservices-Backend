@@ -7,7 +7,8 @@ export const addReview = async (req: any, res: Response) => {
     const { productId, rating, comment } = req.body;
     
     // Validate product exists via product-service HTTP call
-    const productRes = await axios.get(`http://127.0.0.1:5003/api/products/${productId}`);
+    const productUrl = process.env.PRODUCT_SERVICE_URL || 'http://127.0.0.1:5003';
+    const productRes = await axios.get(`${productUrl}/api/products/${productId}`);
     if (!productRes.data) return res.status(404).json({ message: 'Product not found' });
     
     const businessId = productRes.data.businessId; // We assume the product object returns the vendor's business ID

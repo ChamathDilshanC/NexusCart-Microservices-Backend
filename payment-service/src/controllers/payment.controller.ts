@@ -24,14 +24,16 @@ export const processPayment = async (req: any, res: Response) => {
 
     if (isSuccess) {
       // Update order status synchronously to avoid inconsistent state for the user
-      await axios.patch(`http://127.0.0.1:5005/api/orders/${orderId}/status`, {
+      const orderUrl = process.env.ORDER_SERVICE_URL || 'http://127.0.0.1:5005';
+      await axios.patch(`${orderUrl}/api/orders/${orderId}/status`, {
         status: 'PAID'
       }, {
         headers: { Authorization: req.header('Authorization') }
       }).catch(err => console.error('Failed to update order status via payment success'));
 
       // Send payment success notification
-      axios.post('http://127.0.0.1:5007/api/notifications/send', {
+      const notifUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007';
+      axios.post(`${notifUrl}/api/notifications/send`, {
         userId: req.user.id || req.user._id,
         type: 'PAYMENT_SUCCESS',
         payload: { transactionId, amount, orderId }
