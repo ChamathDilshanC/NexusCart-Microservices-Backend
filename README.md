@@ -1,0 +1,157 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/TypeScript.svg" width="60" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/NodeJS-Dark.svg" width="60" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/ExpressJS-Dark.svg" width="60" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/MongoDB.svg" width="60" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Docker.svg" width="60" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Azure-Dark.svg" width="60" />
+  
+  <br/>
+  <h1>🚀 NexusCart Microservices Backend</h1>
+  <p><b>An ultra-modern, highly scalable, and completely decoupled E-Commerce Backend.</b></p>
+</div>
+
+---
+
+## 🌟 Overview
+NexusCart is a robust multi-vendor E-Commerce platform. Its backend is built using a **pure Microservices Architecture** consisting of 8 independent services and 1 API Gateway. It utilizes internal network routing and asynchronous HTTP communication to ensure maximum decoupling and scalability.
+
+This repository is **Azure Container Apps (ACA)** deployment-ready with standardized Dockerfiles and dynamic environment variable routing.
+
+---
+
+## 🏗️ Architecture Topography
+
+Below is the overarching topology of the NexusCart cluster. The API Gateway serves as the single public entry point, securely proxying requests to internal, isolated microservices.
+
+```mermaid
+graph TD
+    Client((🌍 Client Applications))
+    Gateway[🌐 API Gateway<br/>:5000]
+    
+    subgraph Core Services
+        Auth[🔐 Auth Service<br/>:5001]
+        Business[🏢 Business Service<br/>:5002]
+        Product[📦 Product Service<br/>:5003]
+        Admin[🛡️ Admin Service<br/>:5004]
+    end
+
+    subgraph Infrastructure Services
+        Order[🛒 Order Service<br/>:5005]
+        Payment[💳 Payment Service<br/>:5006]
+        Notif[🔔 Notification Service<br/>:5007]
+        Review[⭐ Review Service<br/>:5008]
+    end
+    
+    DB[(🍃 MongoDB)]
+
+    Client -->|HTTP / API Requests| Gateway
+    
+    Gateway -.-> Auth
+    Gateway -.-> Business
+    Gateway -.-> Product
+    Gateway -.-> Admin
+    Gateway -.-> Order
+    Gateway -.-> Payment
+    Gateway -.-> Notif
+    Gateway -.-> Review
+
+    Auth & Business & Product & Admin & Order & Payment & Notif & Review ==> DB
+```
+
+---
+
+## 🔄 Internal Event Flow (Example: Checkout Process)
+
+NexusCart uses asynchronous inter-service communication (via Axios). Microservices do not share database schemas; instead, they verify and update states through secure internal REST endpoints.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Payment as 💳 Payment Service
+    participant Order as 🛒 Order Service
+    participant Notif as 🔔 Notification Service
+
+    User->>Payment: POST /api/payments/process
+    activate Payment
+    Payment-->>Payment: Verify Gateway & Process Funds
+    
+    alt Payment Successful
+        Payment->>Order: PATCH /api/orders/:id/status (PAID)
+        Order-->>Payment: 200 OK
+        
+        Payment->>Notif: POST /api/notifications/send (Receipt)
+        Notif-->>Payment: 200 Logged
+        
+        Payment-->>User: 200 Success: Payment Processed
+    else Payment Failed
+        Payment-->>User: 400 Bad Request
+    end
+    deactivate Payment
+```
+
+---
+
+## 💻 Tech Stack
+- **Runtime:** Node.js (TypeScript)
+- **Framework:** Express.js
+- **Database:** MongoDB / Mongoose ODM
+- **Inter-Service Communication:** Axios (REST)
+- **Authentication:** JWT (JSON Web Tokens)
+- **Containerization:** Docker & Docker Compose
+- **Cloud Readiness:** Microsoft Azure (Container Apps / ACR)
+
+---
+
+## 🚀 Quick Start (Local Development)
+
+### Prerequisites
+- Node.js (v18+)
+- MongoDB running locally on port `27017`
+
+### 1. Installation
+Install the dependencies for the root orchestrator:
+```bash
+npm install
+```
+
+Install dependencies for all 9 individual microservices:
+```bash
+npm run install:all
+```
+
+### 2. Environment Variables
+Create a `.env` file in the root directory. You can copy the template:
+```bash
+cp .env.example .env
+```
+*(No need to configure service URLs for local development; they fallback to `127.0.0.1` automatically).*
+
+### 3. Run the Cluster
+Start the entire cluster using `concurrently`. This spins up the API Gateway and all 8 microservices simultaneously.
+```bash
+npm run dev
+```
+
+### 4. Interactive Documentation
+Once the cluster is running, simply navigate to the API Gateway in your browser to view the **Developer Hub UI**:
+👉 **http://localhost:5000/**
+
+---
+
+## 🐳 Docker Deployment
+
+Every service contains a `Dockerfile` and is fully containerized. To build a specific service:
+
+```bash
+cd auth-service
+docker build -t nexuscart-auth .
+docker run -p 5001:5001 nexuscart-auth
+```
+
+> **Note on Environment Variables:** For production Docker deployments (like Azure Container Apps), ensure you set the specific Internal FQDN URL variables (e.g. `AUTH_SERVICE_URL`) in your cloud provider so the proxy can correctly route traffic between containers.
+
+---
+<div align="center">
+  <i>Architected with ❤️ for modern E-Commerce</i>
+</div>
