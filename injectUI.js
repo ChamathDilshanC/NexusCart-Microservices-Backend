@@ -1,25 +1,139 @@
-import express from 'express';
-import cors from 'cors';
+const fs = require('fs');
+const path = require('path');
 
-const app = express();
+const services = [
+  {
+    dir: 'auth-service',
+    route: '/auth',
+    name: 'Authentication Service',
+    sections: [
+      {
+        title: 'Authentication',
+        endpoints: [
+          { method: 'POST', path: '/register', desc: 'Register a new user' },
+          { method: 'POST', path: '/verify-otp', desc: 'Verify email OTP' },
+          { method: 'POST', path: '/login', desc: 'Login to get JWT token' },
+          { method: 'GET', path: '/profile', desc: 'Get current user profile (Auth required)' }
+        ]
+      }
+    ]
+  },
+  {
+    dir: 'business-service',
+    route: '/business',
+    name: 'Business Service',
+    sections: [
+      {
+        title: 'Vendor Business',
+        endpoints: [
+          { method: 'POST', path: '/register', desc: 'Register a new business (Vendor only)' },
+          { method: 'GET', path: '/my-business', desc: 'Get logged in vendor business details' }
+        ]
+      }
+    ]
+  },
+  {
+    dir: 'product-service',
+    route: '/products',
+    name: 'Product Service',
+    sections: [
+      {
+        title: 'Public Catalog',
+        endpoints: [
+          { method: 'GET', path: '/', desc: 'List all products' },
+          { method: 'GET', path: '/:id', desc: 'Get product by ID' }
+        ]
+      },
+      {
+        title: 'Vendor Actions',
+        endpoints: [
+          { method: 'POST', path: '/', desc: 'Create a new product (Vendor only)' },
+          { method: 'GET', path: '/vendor/me', desc: 'List products for logged in vendor' }
+        ]
+      }
+    ]
+  },
+  {
+    dir: 'admin-service',
+    route: '/admin',
+    name: 'Admin Service',
+    sections: [
+      {
+        title: 'Administration',
+        endpoints: [
+          { method: 'GET', path: '/businesses/pending', desc: 'List pending business registrations (Admin only)' },
+          { method: 'PATCH', path: '/businesses/:id/review', desc: 'Approve or reject business (Admin only)' },
+          { method: 'GET', path: '/users', desc: 'List all platform users' },
+          { method: 'GET', path: '/metrics', desc: 'Get system metrics overview' }
+        ]
+      }
+    ]
+  },
+  {
+    dir: 'order-service', route: '/orders', name: 'Order Service',
+    sections: [{ title: 'System', endpoints: [{ method: 'GET', path: '/health', desc: 'Health check' }] }]
+  },
+  {
+    dir: 'payment-service', route: '/payments', name: 'Payment Service',
+    sections: [{ title: 'System', endpoints: [{ method: 'GET', path: '/health', desc: 'Health check' }] }]
+  },
+  {
+    dir: 'notification-service', route: '/notifications', name: 'Notification Service',
+    sections: [{ title: 'System', endpoints: [{ method: 'GET', path: '/health', desc: 'Health check' }] }]
+  },
+  {
+    dir: 'review-rating-service', route: '/reviews', name: 'Review & Rating Service',
+    sections: [{ title: 'System', endpoints: [{ method: 'GET', path: '/health', desc: 'Health check' }] }]
+  }
+];
 
-app.use(cors());
-app.use(express.json());
+const getHtmlTemplate = (service) => {
+  let tableHtml = '';
+  let tocHtml = '';
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', service: 'review-rating-service' });
-});
+  service.sections.forEach(sec => {
+    const id = sec.title.replace(/\s+/g, '-').toLowerCase();
+    tocHtml += `<a href="#${id}">${sec.title}</a>\n`;
+    
+    let rowsHtml = '';
+    sec.endpoints.forEach(e => {
+      const fullPath = `/api${service.route}${e.path === '/' ? '' : e.path}`;
+      rowsHtml += `
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-${e.method.toLowerCase()}">${e.method}</span>
+            </td>
+            <td class="path-col">${fullPath}</td>
+            <td class="desc-col">${e.desc}</td>
+          </tr>`;
+    });
 
+    tableHtml += `
+      <h3 id="${id}">${sec.title}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 20%;">Method</th>
+            <th style="width: 35%;">Endpoint</th>
+            <th style="width: 45%;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+${rowsHtml}
+        </tbody>
+      </table>
+    `;
+  });
 
-// Modern Documentation Route
-app.get('/reviews', (req, res) => {
-  res.send(`
+  // We return a string that represents the template literal in the TS file!
+  // It needs to be wrapped in backticks, and any template string literals inside the final HTML should just be plain HTML.
+  return '`' + `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review & Rating Service Documentation</title>
+    <title>${service.name} Documentation</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
@@ -208,7 +322,7 @@ app.get('/reviews', (req, res) => {
             <div class="breadcrumb">Get Started</div>
             
             <div class="header-row">
-                <h1>Review & Rating Service</h1>
+                <h1>${service.name}</h1>
                 <button class="copy-btn">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                     Copy page
@@ -217,28 +331,7 @@ app.get('/reviews', (req, res) => {
             
             <div class="subtitle">A comprehensive list of all available endpoints for this microservice. For the complete NexusCart API specification, visit api.nexuscart.com.</div>
 
-            
-      <h3 id="system">System</h3>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 20%;">Method</th>
-            <th style="width: 35%;">Endpoint</th>
-            <th style="width: 45%;">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-
-          <tr>
-            <td class="method-col">
-              <span class="badge badge-get">GET</span>
-            </td>
-            <td class="path-col">/api/reviews/health</td>
-            <td class="desc-col">Health check</td>
-          </tr>
-        </tbody>
-      </table>
-    
+            ${tableHtml}
 
         </div>
 
@@ -247,13 +340,27 @@ app.get('/reviews', (req, res) => {
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
                 On this page
             </div>
-            <a href="#system">System</a>
-
+            ${tocHtml}
         </div>
     </div>
 </body>
 </html>
-`);
-});
+` + '`';
+};
 
-export default app;
+services.forEach(svc => {
+  const appTsPath = path.join(__dirname, svc.dir, 'src', 'app.ts');
+  if (fs.existsSync(appTsPath)) {
+    let content = fs.readFileSync(appTsPath, 'utf8');
+    
+    const startIndex = content.indexOf('// Modern Documentation Route');
+    const endIndex = content.lastIndexOf('export default app;');
+    
+    if (startIndex !== -1 && endIndex !== -1) {
+      const routeCode = `// Modern Documentation Route\napp.get('${svc.route}', (req, res) => {\n  res.send(${getHtmlTemplate(svc)});\n});\n\n`;
+      content = content.slice(0, startIndex) + routeCode + content.slice(endIndex);
+      fs.writeFileSync(appTsPath, content, 'utf8');
+      console.log(`Injected minimalist UI with real data for ${svc.dir}`);
+    }
+  }
+});

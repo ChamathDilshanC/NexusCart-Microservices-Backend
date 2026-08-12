@@ -19,275 +19,238 @@ app.get('/payments', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Service - API Documentation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <title>Payment Service Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-1: #3b82f6;
-            --accent-2: #8b5cf6;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-        }
-
+        * { box-sizing: border-box; }
         body, html {
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-        }
-
-        /* Animated Background Blob */
-        .bg-blob {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw;
-            height: 80vw;
-            max-width: 800px;
-            max-height: 800px;
-            background: radial-gradient(circle, var(--accent-2) 0%, var(--accent-1) 100%);
-            filter: blur(120px);
-            opacity: 0.15;
-            z-index: -1;
-            animation: pulse 10s ease-in-out infinite alternate;
-        }
-
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.15; }
-            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.25; }
-        }
-
-        nav {
-            width: 100%;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .logo {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 800;
-            font-size: 24px;
-            background: linear-gradient(135deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 1px;
-        }
-
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-            width: 100%;
-            max-width: 1000px;
-            box-sizing: border-box;
-            animation: slideUp 0.8s ease-out forwards;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .header-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: clamp(40px, 6vw, 72px);
-            font-weight: 800;
-            text-align: center;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            background: linear-gradient(to right, #60a5fa, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header-subtitle {
-            font-size: 18px;
-            color: var(--text-muted);
-            text-align: center;
-            max-width: 600px;
-            margin-bottom: 50px;
-            line-height: 1.6;
-        }
-
-        .glass-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 40px;
-            width: 100%;
-            backdrop-filter: blur(16px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .glass-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .api-endpoint {
-            display: flex;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: background 0.2s ease;
-        }
-
-        .api-endpoint:hover {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .method {
-            font-family: monospace;
-            font-weight: bold;
-            font-size: 14px;
-            padding: 6px 12px;
-            border-radius: 6px;
-            margin-right: 16px;
-            letter-spacing: 1px;
-        }
-
-        .method.get { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .method.post { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-
-        .path {
-            font-family: monospace;
-            font-size: 16px;
-            color: #e2e8f0;
-            flex: 1;
-        }
-
-        .description {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-left: 20px;
-        }
-
-        .btn {
-            display: inline-block;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            color: white;
-            text-decoration: none;
-            padding: 12px 32px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-family: 'Outfit', sans-serif;
-            margin-top: 30px;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.5);
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-            transform: scale(1.05);
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 40px;
-            width: 100%;
-        }
-
-        .feature-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 24px;
-            border-radius: 16px;
-            text-align: center;
-        }
-
-        .feature-item h3 {
-            font-family: 'Outfit', sans-serif;
-            color: #e2e8f0;
-            margin: 0 0 10px 0;
-            font-size: 18px;
-        }
-
-        .feature-item p {
-            color: var(--text-muted);
-            margin: 0;
+            margin: 0; padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #0f172a;
+            background-color: #ffffff;
             font-size: 14px;
             line-height: 1.5;
         }
+
+        /* Top Navigation */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            height: 56px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 500;
+        }
+        .nav-item {
+            margin-right: 24px;
+            display: flex;
+            align-items: center;
+            color: #64748b;
+            cursor: pointer;
+        }
+        .nav-item.active {
+            color: #0f172a;
+            border-bottom: 2px solid #0f172a;
+            height: 100%;
+        }
+        .nav-item svg { margin-right: 8px; width: 16px; height: 16px; }
+
+        /* Layout */
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 56px);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 48px 64px;
+            max-width: 900px;
+        }
+
+        .right-sidebar {
+            width: 250px;
+            padding: 48px 24px;
+            border-left: 1px solid #f1f5f9;
+        }
+
+        /* Typography & Headers */
+        .breadcrumb {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+        .subtitle {
+            color: #475569;
+            font-size: 16px;
+            margin-bottom: 48px;
+        }
+        
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .copy-btn svg { margin-right: 6px; width: 14px; height: 14px; }
+
+        /* Tables */
+        h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 32px 0 16px 0;
+            padding-bottom: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 48px;
+        }
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #0f172a;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+        
+        .path-col {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            color: #334155;
+            background: #f8fafc;
+            border-radius: 4px;
+            padding: 2px 6px !important;
+            display: inline-block;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .desc-col {
+            color: #475569;
+            font-size: 13px;
+        }
+
+        /* Badges */
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+        .badge-get { background: #e0f2fe; color: #0284c7; }
+        .badge-post { background: #dcfce7; color: #16a34a; }
+        .badge-patch { background: #fef9c3; color: #ca8a04; }
+        .badge-delete { background: #fee2e2; color: #dc2626; }
+
+        /* Right Sidebar TOC */
+        .toc-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+        .toc-header svg { margin-right: 8px; width: 14px; height: 14px; }
+        .right-sidebar a {
+            display: block;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        .right-sidebar a:hover { color: #0f172a; }
     </style>
 </head>
 <body>
-    <div class="bg-blob"></div>
+    <div class="top-nav">
+        <div class="nav-item active">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            Documentation
+        </div>
+        <div class="nav-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+            API & SDK References
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="breadcrumb">Get Started</div>
+            
+            <div class="header-row">
+                <h1>Payment Service</h1>
+                <button class="copy-btn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    Copy page
+                </button>
+            </div>
+            
+            <div class="subtitle">A comprehensive list of all available endpoints for this microservice. For the complete NexusCart API specification, visit api.nexuscart.com.</div>
+
+            
+      <h3 id="system">System</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 20%;">Method</th>
+            <th style="width: 35%;">Endpoint</th>
+            <th style="width: 45%;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-get">GET</span>
+            </td>
+            <td class="path-col">/api/payments/health</td>
+            <td class="desc-col">Health check</td>
+          </tr>
+        </tbody>
+      </table>
     
-    <nav>
-        <div class="logo">NEXUSCART</div>
-        <div style="color: var(--text-muted); font-size: 14px;">API v1.0</div>
-    </nav>
 
-    <main>
-        <h1 class="header-title">Payment Service</h1>
-        <p class="header-subtitle">Welcome to the interactive documentation for the NexusCart Payment Service. Explore available endpoints and integrate seamlessly with our modern infrastructure.</p>
-        
-        <div class="glass-card">
-            <h2 style="font-family: 'Outfit'; margin-top: 0; margin-bottom: 24px; color: white;">Available Endpoints</h2>
-            
-            <div class="api-endpoint">
-                <span class="method get">GET</span>
-                <span class="path">/api/payments</span>
-                <span class="description">Access the Payment Service documentation</span>
-            </div>
-            
-            <div class="api-endpoint">
-                <span class="method get">GET</span>
-                <span class="path">/api/payments/health</span>
-                <span class="description">Check service health status</span>
-            </div>
-
-            <!-- Future endpoints will appear here -->
         </div>
 
-        <div class="features">
-            <div class="feature-item">
-                <h3>⚡ Real-time Ready</h3>
-                <p>Built on event-driven architecture for instant state updates.</p>
+        <div class="right-sidebar">
+            <div class="toc-header">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                On this page
             </div>
-            <div class="feature-item">
-                <h3>🔒 Secure</h3>
-                <p>Fully authenticated microservice boundary with zero-trust principles.</p>
-            </div>
-            <div class="feature-item">
-                <h3>🚀 Scalable</h3>
-                <p>Dockerized and ready for horizontal scaling in Kubernetes.</p>
-            </div>
-        </div>
+            <a href="#system">System</a>
 
-        <a href="/api/health" class="btn">View Gateway Status</a>
-    </main>
+        </div>
+    </div>
 </body>
 </html>
 `);
