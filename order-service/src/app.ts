@@ -1,10 +1,14 @@
 import express from 'express';
 import cors from 'cors';
+import orderRoutes from './routes/order.routes';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Routes
+app.use('/orders', orderRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', service: 'order-service' });
