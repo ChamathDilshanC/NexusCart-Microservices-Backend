@@ -1,0 +1,20 @@
+{
+  "name": "nexuscart-backend-microservices",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:auth\" \"npm run dev:business\" \"npm run dev:product\" \"npm run dev:admin\" \"npm run dev:order\" \"npm run dev:payment\" \"npm run dev:notification\" \"npm run dev:review\"",
+    "dev:api": "cd api-gateway && npm run dev",
+    "dev:auth": "cd auth-service && npm run dev",
+    "dev:business": "cd business-service && npm run dev",
+    "dev:product": "cd product-service && npm run dev",
+    "dev:admin": "cd admin-service && npm run dev",
+    "dev:order": "cd order-service && npm run dev",
+    "dev:payment": "cd payment-service && npm run dev",
+    "dev:notification": "cd notification-service && npm run dev",
+    "dev:review": "cd review-rating-service && npm run dev",
+    "install:all": "npm install && cd api-gateway && npm install && cd ../auth-service && npm install && cd ../business-service && npm install && cd ../product-service && npm install && cd ../admin-service && npm install && cd ../order-service && npm install && cd ../payment-service && npm install && cd ../notification-service && npm install && cd ../review-rating-service && npm install"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
