@@ -2,7 +2,9 @@
       "name": "product-service",
       "version": "1.0.0",
       "scripts": {
-            "dev": "nodemon src/server.ts"
+            "dev": "nodemon src/server.ts",
+            "build": "tsc",
+            "start": "node dist/server.js"
       },
       "dependencies": {
             "axios": "^1.19.0",
