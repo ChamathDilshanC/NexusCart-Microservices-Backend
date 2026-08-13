@@ -1,0 +1,118 @@
+# =============================================================================
+# NexusCart Backend - CI/CD Pipeline
+# =============================================================================
+# Triggers on every push to main (except docs/readme).
+#  1. Builds all 9 Docker images in parallel (matrix)
+#  2. Pushes them to ACR (tagged with commit SHA + latest)
+#  3. Updates each Azure Container App to the new image
+# =============================================================================
+
+name: Build & Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+env:
+  ACR_NAME: nexuscartacr
+  RESOURCE_GROUP: NexusCart-RG
+  SERVICES: >-
+    api-gateway auth-service business-service product-service
+    admin-service order-service payment-service notification-service
+    review-rating-service
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Build & push images (9 parallel runners)
+  # ---------------------------------------------------------------------------
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - business-service
+          - product-service
+          - admin-service
+          - order-service
+          - payment-service
+          - notification-service
+          - review-rating-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build image
+        run: |
+          docker build \
+            -t ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:${{ github.sha }} \
+            -t ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:latest \
+            ./${{ matrix.service }}
+
+      - name: Push image
+        run: |
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:${{ github.sha }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:latest
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Deploy to Azure Container Apps (after all images are pushed)
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - business-service
+          - product-service
+          - admin-service
+          - order-service
+          - payment-service
+          - notification-service
+          - review-rating-service
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update Container App image
+        run: |
+          az containerapp update \
+            --name ${{ matrix.service }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:${{ github.sha }} \
+            --only-show-errors
+
+      - name: Verify revision is running
+        run: |
+          sleep 15
+          STATUS=$(az containerapp show \
+            --name ${{ matrix.service }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.runningStatus" -o tsv)
+          echo "${{ matrix.service }}: $STATUS"
+          if [ "$STATUS" != "Running" ]; then
+            echo "::error::${{ matrix.service }} is not running (status: $STATUS)"
+            exit 1
+          fi
