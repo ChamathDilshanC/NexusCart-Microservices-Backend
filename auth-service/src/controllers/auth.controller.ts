@@ -36,6 +36,7 @@ export const register = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: 'Registration successful. Please verify your email.' });
   } catch (error) {
+    console.error("Registration Error:", error);
     res.status(500).json({ message: 'Error registering user' });
   }
 };
@@ -62,6 +63,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: 'Email verified successfully' });
   } catch (error) {
+    console.error("Verify OTP Error:", error);
     res.status(500).json({ message: 'Error verifying OTP' });
   }
 };
@@ -88,6 +90,7 @@ export const login = async (req: Request, res: Response) => {
     const token = generateToken((user._id as mongoose.Types.ObjectId).toString(), user.role);
     res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name } });
   } catch (error) {
+    console.error("Login Error:", error);
     res.status(500).json({ message: 'Error logging in' });
   }
 };
