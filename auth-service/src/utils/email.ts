@@ -42,7 +42,7 @@ export const sendOTP = async (email: string, otp: string) => {
     from: '"NexusCart" <' + process.env.EMAIL_USER + '>', // Sets sender name to NexusCart
     to: email,
     subject: 'Your NexusCart Verification Code',
-    text: \`Your OTP for NexusCart registration is: \${otp}. It will expire in 10 minutes.\`, // Fallback for clients that don't support HTML
+    text: `Your OTP for NexusCart registration is: ${otp}. It will expire in 10 minutes.`, // Fallback for clients that don't support HTML
     html: htmlTemplate
   };
 
