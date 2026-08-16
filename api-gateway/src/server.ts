@@ -28,6 +28,7 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexusCart Developer Hub</title>
+    <link rel="icon" href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/Logo/Logo%20with%20out%20Text.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
