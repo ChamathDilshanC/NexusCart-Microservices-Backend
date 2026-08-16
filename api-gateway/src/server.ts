@@ -1,10 +1,15 @@
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import cors from 'cors';
+import path from 'path';
 
 const app = express();
 
 app.use(cors());
+
+// Serve favicon
+app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, '../public/favicon.png')));
+app.get('/favicon.png', (req, res) => res.sendFile(path.join(__dirname, '../public/favicon.png')));
 
 // Microservice Routes
 app.use('/api/auth', createProxyMiddleware({ target: process.env.AUTH_SERVICE_URL || 'http://127.0.0.1:5001', changeOrigin: true, pathRewrite: { '^/api/auth': '/auth' } }) as express.RequestHandler);
@@ -28,7 +33,7 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexusCart Developer Hub</title>
-    <link rel="icon" href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/Logo/Logo%20with%20out%20Text.png" type="image/png">
+    <link rel="icon" href="/favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
