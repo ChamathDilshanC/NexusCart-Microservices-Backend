@@ -14,6 +14,20 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, name, role } = req.body;
 
+    // Input validation
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: 'Name, email and password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    // Check DB connection
+    if (mongoose.connection.readyState !== 1) {
+      console.error('Registration Error: MongoDB not connected. State:', mongoose.connection.readyState);
+      return res.status(503).json({ message: 'Service temporarily unavailable. Please try again.' });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
@@ -34,13 +48,21 @@ export const register = async (req: Request, res: Response) => {
       { upsert: true, new: true }
     );
 
-    // Send email
-    await sendOTP(email, otp);
+    // Send email — non-blocking: user is created even if email fails
+    try {
+      await sendOTP(email, otp);
+    } catch (emailError: any) {
+      console.error('Email sending failed (user still created):', emailError?.message || emailError);
+    }
 
     res.status(201).json({ message: 'Registration successful. Please verify your email.' });
-  } catch (error) {
-    console.error("Registration Error:", error);
-    res.status(500).json({ message: 'Error registering user' });
+  } catch (error: any) {
+    console.error('Registration Error:', error?.message || error);
+    // Return specific error in development, generic in production
+    const message = process.env.NODE_ENV === 'production'
+      ? 'Error registering user'
+      : `Error registering user: ${error?.message || 'Unknown error'}`;
+    res.status(500).json({ message });
   }
 };
 
