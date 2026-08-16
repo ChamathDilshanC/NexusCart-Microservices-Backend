@@ -13,7 +13,6 @@ app.get('/favicon.png', (req, res) => res.sendFile(path.join(__dirname, '../publ
 
 // Microservice Routes
 app.use('/api/auth', createProxyMiddleware({ target: process.env.AUTH_SERVICE_URL || 'http://127.0.0.1:5001', changeOrigin: true, pathRewrite: { '^/api/auth': '/auth' } }) as express.RequestHandler);
-app.use('/api/business', createProxyMiddleware({ target: process.env.BUSINESS_SERVICE_URL || 'http://127.0.0.1:5002', changeOrigin: true, pathRewrite: { '^/api/business': '/business' } }) as express.RequestHandler);
 app.use('/api/products', createProxyMiddleware({ target: process.env.PRODUCT_SERVICE_URL || 'http://127.0.0.1:5003', changeOrigin: true, pathRewrite: { '^/api/products': '/products' } }) as express.RequestHandler);
 app.use('/api/admin', createProxyMiddleware({ target: process.env.ADMIN_SERVICE_URL || 'http://127.0.0.1:5004', changeOrigin: true, pathRewrite: { '^/api/admin': '/admin' } }) as express.RequestHandler);
 app.use('/api/orders', createProxyMiddleware({ target: process.env.ORDER_SERVICE_URL || 'http://127.0.0.1:5005', changeOrigin: true, pathRewrite: { '^/api/orders': '/orders' } }) as express.RequestHandler);
@@ -116,13 +115,7 @@ app.get('/', (req, res) => {
                         </td>
                         <td class="desc-col">User authentication, registration, and JWT token issuance.</td>
                     </tr>
-                    <tr>
-                        <td class="desc-col" style="font-weight: 500; color: #0f172a;">Business & Vendors</td>
-                        <td class="path-col">
-                            <a href="/api/business" class="service-link">/api/business <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>
-                        </td>
-                        <td class="desc-col">Vendor registrations, business profile management.</td>
-                    </tr>
+
                     <tr>
                         <td class="desc-col" style="font-weight: 500; color: #0f172a;">Product Catalog</td>
                         <td class="path-col">
@@ -135,7 +128,7 @@ app.get('/', (req, res) => {
                         <td class="path-col">
                             <a href="/api/admin" class="service-link">/api/admin <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>
                         </td>
-                        <td class="desc-col">Admin dashboard routes, business approvals, and metrics.</td>
+                        <td class="desc-col">Admin dashboard routes, product/order management, and metrics.</td>
                     </tr>
                 </tbody>
             </table>
@@ -176,7 +169,7 @@ app.get('/', (req, res) => {
                         <td class="path-col">
                             <a href="/api/reviews" class="service-link">/api/reviews <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>
                         </td>
-                        <td class="desc-col">Product reviews, vendor ratings, and feedback moderation.</td>
+                        <td class="desc-col">Product reviews and ratings.</td>
                     </tr>
                 </tbody>
             </table>

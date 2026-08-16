@@ -1,64 +1,13 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import Business from '../models/Business';
 import User from '../models/User';
 import Order from '../models/Order';
 import axios from 'axios';
 
-export const getPendingBusinesses = async (req: AuthRequest, res: Response) => {
-  try {
-    const businesses = await Business.find({ status: 'Pending' }).populate('vendorId', 'name email');
-    res.status(200).json(businesses);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching pending businesses' });
-  }
-};
+const productServiceUrl = () => process.env.PRODUCT_SERVICE_URL || 'http://127.0.0.1:5003';
+const orderServiceUrl = () => process.env.ORDER_SERVICE_URL || 'http://127.0.0.1:5005';
 
-export const reviewBusiness = async (req: AuthRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body; // 'Approved' | 'Rejected'
-
-    if (!['Approved', 'Rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
-    }
-
-    const business = await Business.findByIdAndUpdate(id, { status }, { new: true }).populate('vendorId', 'name email');
-    if (!business) {
-      return res.status(404).json({ message: 'Business not found' });
-    }
-
-    if (status === 'Approved' && business.vendorId) {
-      const vendor: any = business.vendorId;
-      try {
-        const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007';
-        await axios.post(`${notificationServiceUrl}/notifications/send`, {
-          userId: vendor._id,
-          type: 'EMAIL',
-          payload: {
-            to: vendor.email,
-            subject: 'NexusCart - Your Business Account is Approved!',
-            html: `
-              <h2>Congratulations, ${vendor.name}!</h2>
-              <p>Your business <b>${business.businessName}</b> has been successfully approved by the admin.</p>
-              <p>You can now log in to the Vendor Dashboard and start adding your products.</p>
-              <br/>
-              <p>Best Regards,</p>
-              <p>NexusCart Team</p>
-            `
-          }
-        });
-      } catch (notifyErr) {
-        console.error('Failed to send approval email notification:', notifyErr);
-      }
-    }
-
-    res.status(200).json({ message: `Business ${status.toLowerCase()} successfully`, business });
-  } catch (error) {
-    res.status(500).json({ message: 'Error reviewing business' });
-  }
-};
-
+// Admin: Get all users
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
   try {
     const users = await User.find().select('-passwordHash');
@@ -68,26 +17,122 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Admin: System metrics
 export const getSystemMetrics = async (req: AuthRequest, res: Response) => {
   try {
     const totalUsers = await User.countDocuments();
-    const totalVendors = await Business.countDocuments({ status: 'Approved' });
     const totalOrders = await Order.countDocuments();
     
     const revenueData = await Order.aggregate([
-      { $match: { status: { $ne: 'Cancelled' } } },
+      { $match: { status: { $ne: 'CANCELLED' } } },
       { $group: { _id: null, totalRevenue: { $sum: '$totalAmount' } } }
     ]);
     
     const totalRevenue = revenueData.length > 0 ? revenueData[0].totalRevenue : 0;
 
+    // Get total products from product-service
+    let totalProducts = 0;
+    try {
+      const productsRes = await axios.get(`${productServiceUrl()}/products`);
+      totalProducts = Array.isArray(productsRes.data) ? productsRes.data.length : 0;
+    } catch (e) {
+      console.error('Failed to fetch products count:', e);
+    }
+
     res.status(200).json({
       totalUsers,
-      totalVendors,
+      totalProducts,
       totalOrders,
       totalRevenue
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching system metrics' });
+  }
+};
+
+// Admin: Get all products (proxy to product-service)
+export const getAllProducts = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.get(`${productServiceUrl()}/products`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    res.status(error.response?.status || 500).json({ message: 'Error fetching products' });
+  }
+};
+
+// Admin: Create product (proxy to product-service)
+export const createProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.post(`${productServiceUrl()}/products`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(201).json(response.data);
+  } catch (error: any) {
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error creating product' });
+  }
+};
+
+// Admin: Update product (proxy to product-service)
+export const updateProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.put(`${productServiceUrl()}/products/${req.params.id}`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating product' });
+  }
+};
+
+// Admin: Delete product (proxy to product-service)
+export const deleteProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.delete(`${productServiceUrl()}/products/${req.params.id}`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting product' });
+  }
+};
+
+// Admin: Get all orders (proxy to order-service)
+export const getAllOrders = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.get(`${orderServiceUrl()}/orders`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    res.status(error.response?.status || 500).json({ message: 'Error fetching orders' });
+  }
+};
+
+// Admin: Update order status (proxy to order-service)
+export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.patch(`${orderServiceUrl()}/orders/${req.params.id}/status`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating order status' });
   }
 };

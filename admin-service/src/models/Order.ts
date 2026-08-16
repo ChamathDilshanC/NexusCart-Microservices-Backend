@@ -4,12 +4,12 @@ const orderItemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, required: true },
   name: { type: String, required: true },
   quantity: { type: Number, required: true, min: 1 },
-  price: { type: Number, required: true, min: 0 }
+  price: { type: Number, required: true, min: 0 },
+  imageUrl: { type: String }
 });
 
 const orderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, required: true },
-  businessId: { type: mongoose.Schema.Types.ObjectId, required: true },
   items: [orderItemSchema],
   totalAmount: { type: Number, required: true },
   status: { 

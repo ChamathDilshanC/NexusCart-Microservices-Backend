@@ -11,7 +11,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
-    req.user = decoded; // we just trust the JWT payload to avoid querying the DB
+    req.user = { _id: decoded.id, id: decoded.id, role: decoded.role }; // map both _id and id for controller compatibility
     next();
   } catch (error) {
     res.status(401).json({ message: 'Invalid or expired token' });

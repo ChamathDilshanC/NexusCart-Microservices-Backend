@@ -229,29 +229,57 @@ app.get('/admin', (req, res) => {
             <td class="method-col">
               <span class="badge badge-get">GET</span>
             </td>
-            <td class="path-col">/api/admin/businesses/pending</td>
-            <td class="desc-col">List pending business registrations (Admin only)</td>
-          </tr>
-          <tr>
-            <td class="method-col">
-              <span class="badge badge-patch">PATCH</span>
-            </td>
-            <td class="path-col">/api/admin/businesses/:id/review</td>
-            <td class="desc-col">Approve or reject business (Admin only)</td>
-          </tr>
-          <tr>
-            <td class="method-col">
-              <span class="badge badge-get">GET</span>
-            </td>
             <td class="path-col">/api/admin/users</td>
-            <td class="desc-col">List all platform users</td>
+            <td class="desc-col">List all platform users (Admin only)</td>
           </tr>
           <tr>
             <td class="method-col">
               <span class="badge badge-get">GET</span>
             </td>
             <td class="path-col">/api/admin/metrics</td>
-            <td class="desc-col">Get system metrics overview</td>
+            <td class="desc-col">Get system metrics overview (Admin only)</td>
+          </tr>
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-get">GET</span>
+            </td>
+            <td class="path-col">/api/admin/products</td>
+            <td class="desc-col">List all products (Admin only)</td>
+          </tr>
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-post">POST</span>
+            </td>
+            <td class="path-col">/api/admin/products</td>
+            <td class="desc-col">Create a new product (Admin only)</td>
+          </tr>
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-patch">PUT</span>
+            </td>
+            <td class="path-col">/api/admin/products/:id</td>
+            <td class="desc-col">Update a product (Admin only)</td>
+          </tr>
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-delete">DELETE</span>
+            </td>
+            <td class="path-col">/api/admin/products/:id</td>
+            <td class="desc-col">Delete a product (Admin only)</td>
+          </tr>
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-get">GET</span>
+            </td>
+            <td class="path-col">/api/admin/orders</td>
+            <td class="desc-col">List all orders (Admin only)</td>
+          </tr>
+          <tr>
+            <td class="method-col">
+              <span class="badge badge-patch">PATCH</span>
+            </td>
+            <td class="path-col">/api/admin/orders/:id/status</td>
+            <td class="desc-col">Update order status (Admin only)</td>
           </tr>
         </tbody>
       </table>

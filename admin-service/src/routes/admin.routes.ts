@@ -1,16 +1,31 @@
 import { Router } from 'express';
-import { getPendingBusinesses, reviewBusiness, getAllUsers, getSystemMetrics } from '../controllers/admin.controller';
+import {
+  getAllUsers, getSystemMetrics,
+  getAllProducts, createProduct, updateProduct, deleteProduct,
+  getAllOrders, updateOrderStatus
+} from '../controllers/admin.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
 
 const router = Router();
 
-// Apply auth and admin check to all routes in this file
+// Apply auth and admin check to all routes
 router.use(authenticate);
 router.use(authorizeRole(['Admin']));
 
-router.get('/businesses/pending', getPendingBusinesses);
-router.patch('/businesses/:id/review', reviewBusiness);
+// User management
 router.get('/users', getAllUsers);
+
+// System metrics
 router.get('/metrics', getSystemMetrics);
+
+// Product management (proxied to product-service)
+router.get('/products', getAllProducts);
+router.post('/products', createProduct);
+router.put('/products/:id', updateProduct);
+router.delete('/products/:id', deleteProduct);
+
+// Order management (proxied to order-service)
+router.get('/orders', getAllOrders);
+router.patch('/orders/:id/status', updateOrderStatus);
 
 export default router;
