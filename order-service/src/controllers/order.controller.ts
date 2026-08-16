@@ -30,7 +30,8 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json({ message: 'Order created successfully', order });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating order' });
+    console.error('createOrder error:', error);
+    res.status(500).json({ message: 'Error creating order', error: (error as Error).message });
   }
 };
 
@@ -40,7 +41,8 @@ export const getUserOrders = async (req: AuthRequest, res: Response) => {
     const orders = await Order.find({ userId: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json(orders);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching orders' });
+    console.error('getUserOrders error:', error);
+    res.status(500).json({ message: 'Error fetching orders', error: (error as Error).message });
   }
 };
 
@@ -50,7 +52,8 @@ export const getAllOrders = async (req: AuthRequest, res: Response) => {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.status(200).json(orders);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching orders' });
+    console.error('getAllOrders error:', error);
+    res.status(500).json({ message: 'Error fetching orders', error: (error as Error).message });
   }
 };
 

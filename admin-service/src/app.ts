@@ -10,8 +10,8 @@ app.use(express.json());
 app.use('/admin', adminRoutes);
 
 
-// Modern Documentation Route
-app.get('/admin', (req, res) => {
+// Modern Documentation Route (root path to avoid conflicting with router)
+app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
 <html lang="en">

@@ -15,8 +15,8 @@ app.get('/health', (req, res) => {
 });
 
 
-// Modern Documentation Route
-app.get('/orders', (req, res) => {
+// Modern Documentation Route (root path to avoid conflicting with router)
+app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
 <html lang="en">

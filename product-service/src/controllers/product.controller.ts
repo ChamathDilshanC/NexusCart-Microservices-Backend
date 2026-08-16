@@ -34,7 +34,8 @@ export const getAllProducts = async (req: any, res: Response) => {
     const products = await Product.find(filter).sort(sortOption);
     res.status(200).json(products);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching products' });
+    console.error('getAllProducts error:', error);
+    res.status(500).json({ message: 'Error fetching products', error: (error as Error).message });
   }
 };
 
@@ -80,7 +81,8 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
     await product.save();
     res.status(201).json({ message: 'Product created successfully', product });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating product' });
+    console.error('createProduct error:', error);
+    res.status(500).json({ message: 'Error creating product', error: (error as Error).message });
   }
 };
 

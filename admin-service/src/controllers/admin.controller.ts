@@ -13,7 +13,8 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
     const users = await User.find().select('-passwordHash');
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching users' });
+    console.error('getAllUsers error:', error);
+    res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
   }
 };
 
@@ -46,7 +47,8 @@ export const getSystemMetrics = async (req: AuthRequest, res: Response) => {
       totalRevenue
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching system metrics' });
+    console.error('getSystemMetrics error:', error);
+    res.status(500).json({ message: 'Error fetching system metrics', error: (error as Error).message });
   }
 };
 
@@ -59,7 +61,8 @@ export const getAllProducts = async (req: AuthRequest, res: Response) => {
     });
     res.status(200).json(response.data);
   } catch (error: any) {
-    res.status(error.response?.status || 500).json({ message: 'Error fetching products' });
+    console.error('getAllProducts proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: 'Error fetching products', detail: error.response?.data || error.message });
   }
 };
 
@@ -75,7 +78,8 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
     });
     res.status(201).json(response.data);
   } catch (error: any) {
-    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error creating product' });
+    console.error('createProduct proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error creating product', detail: error.response?.data || error.message });
   }
 };
 
@@ -91,7 +95,8 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     });
     res.status(200).json(response.data);
   } catch (error: any) {
-    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating product' });
+    console.error('updateProduct proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating product', detail: error.response?.data || error.message });
   }
 };
 
@@ -104,7 +109,8 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
     });
     res.status(200).json(response.data);
   } catch (error: any) {
-    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting product' });
+    console.error('deleteProduct proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting product', detail: error.response?.data || error.message });
   }
 };
 
@@ -117,7 +123,8 @@ export const getAllOrders = async (req: AuthRequest, res: Response) => {
     });
     res.status(200).json(response.data);
   } catch (error: any) {
-    res.status(error.response?.status || 500).json({ message: 'Error fetching orders' });
+    console.error('getAllOrders proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: 'Error fetching orders', detail: error.response?.data || error.message });
   }
 };
 
@@ -133,6 +140,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
     });
     res.status(200).json(response.data);
   } catch (error: any) {
-    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating order status' });
+    console.error('updateOrderStatus proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating order status', detail: error.response?.data || error.message });
   }
 };
