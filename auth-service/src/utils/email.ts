@@ -9,37 +9,76 @@ export const sendOTP = async (email: string, otp: string, context: 'verify' | 'r
     }
   });
 
-  const title = context === 'reset' ? 'Reset your password' : 'Verify your email address';
+  const title = context === 'reset' ? 'Reset your password.' : 'Welcome to NexusCart.';
   const message = context === 'reset' 
-    ? 'Please use the verification code below to reset your NexusCart password.'
-    : 'Please use the verification code below to complete your NexusCart registration.';
+    ? "We received a request to reset your password. If you didn't make this request, you can safely ignore this email."
+    : "We're thrilled to have you here. Complete your registration and join the platform.";
+
+  const actionTitle = context === 'reset' ? 'Your Reset Code' : 'Your Verification Code';
+
+  const logoUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/Logo/Logo%20with%20out%20Text.png`;
 
   const htmlTemplate = `
-    <div style="font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
-      <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #111111; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 0;">NexusCart</h1>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #000000; color: #ffffff;">
+      
+      <!-- Header -->
+      <div style="padding: 32px 20px; text-align: center;">
+        <img src="${logoUrl}" alt="NexusCart" style="height: 24px; width: auto; vertical-align: middle; margin-right: 8px; filter: invert(1);" />
+        <span style="font-size: 20px; font-weight: 600; vertical-align: middle; letter-spacing: -0.5px;">NexusCart</span>
       </div>
       
-      <div style="background-color: #fafafa; border: 1px solid #eaeaea; border-radius: 12px; padding: 40px; text-align: center;">
-        <h2 style="color: #111111; font-size: 20px; font-weight: 600; margin-top: 0; margin-bottom: 16px;">${title}</h2>
-        <p style="color: #666666; font-size: 15px; line-height: 24px; margin-bottom: 32px;">
+      <!-- Main White Section -->
+      <div style="background-color: #ffffff; color: #000000; padding: 60px 40px; text-align: center;">
+        <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 42px; font-weight: 500; margin: 0 0 24px 0; letter-spacing: -1px; line-height: 1.1;">
+          ${title}
+        </h1>
+        
+        <hr style="border: 0; border-top: 1px solid #eaeaea; width: 60%; margin: 32px auto;" />
+        
+        <p style="font-size: 15px; line-height: 24px; color: #444444; margin: 0 auto 40px auto; max-width: 400px;">
           ${message}
         </p>
         
-        <div style="background-color: #ffffff; border: 1px solid #eaeaea; border-radius: 8px; padding: 16px 24px; display: inline-block; margin-bottom: 32px;">
-          <span style="font-family: monospace; font-size: 32px; font-weight: 700; color: #111111; letter-spacing: 4px;">${otp}</span>
+        <!-- Down Arrow Circle -->
+        <div style="width: 32px; height: 32px; background-color: #000000; color: #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; margin: 0 auto;">
+          &darr;
         </div>
-        
-        <p style="color: #888888; font-size: 13px; line-height: 20px; margin: 0;">
-          This code will expire in 10 minutes.<br>If you didn't request this, you can safely ignore this email.
-        </p>
       </div>
       
-      <div style="text-align: center; margin-top: 32px;">
-        <p style="color: #999999; font-size: 12px;">
-          &copy; ${new Date().getFullYear()} NexusCart. All rights reserved.
+      <!-- Accent Section (Black) -->
+      <div style="background-color: #000000; color: #ffffff; padding: 60px 40px; text-align: center;">
+        <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 500; margin: 0 0 24px 0; letter-spacing: -0.5px;">
+          ${actionTitle}
+        </h2>
+        
+        <p style="font-size: 14px; line-height: 22px; color: #a0a0a0; margin: 0 auto 40px auto; max-width: 380px;">
+          Enter the code below in the application to continue. This code will expire in 10 minutes.
         </p>
+        
+        <!-- Pill shape for OTP -->
+        <div style="background-color: #ffffff; color: #000000; border-radius: 100px; padding: 16px 48px; display: inline-block; text-align: center;">
+          <span style="font-family: ui-monospace, monospace; font-size: 28px; font-weight: 600; letter-spacing: 6px;">
+            ${otp}
+          </span>
+        </div>
       </div>
+      
+      <!-- Footer (Light Gray) -->
+      <div style="background-color: #f4f4f5; color: #71717a; padding: 40px 20px; text-align: center; font-size: 12px; line-height: 20px;">
+        <p style="margin: 0 0 16px 0;">
+          <a href="#" style="color: #71717a; text-decoration: underline;">View email in browser</a><br>
+          <a href="#" style="color: #71717a; text-decoration: underline;">Update your preferences</a> or <a href="#" style="color: #71717a; text-decoration: underline;">unsubscribe</a>.
+        </p>
+        
+        <p style="margin: 0;">
+          NexusCart Inc.<br>
+          123 Commerce St., Tech City, TC 12345<br>
+          Company Number: 98765432<br>
+          &copy; ${new Date().getFullYear()} NexusCart
+        </p>
+        <p style="font-weight: 600; font-size: 14px; color: #18181b; margin-top: 16px;">NexusCart</p>
+      </div>
+      
     </div>
   `;
 
