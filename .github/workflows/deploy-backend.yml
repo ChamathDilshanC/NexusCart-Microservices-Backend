@@ -51,15 +51,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            src:
+              - '${{ matrix.service }}/**'
+              - '.github/workflows/**'
+
       - name: Azure login
+        if: steps.changes.outputs.src == 'true'
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Login to ACR
+        if: steps.changes.outputs.src == 'true'
         run: az acr login --name ${{ env.ACR_NAME }}
 
       - name: Build image
+        if: steps.changes.outputs.src == 'true'
         run: |
           docker build \
             -t ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:${{ github.sha }} \
@@ -67,6 +79,7 @@ jobs:
             ./${{ matrix.service }}
 
       - name: Push image
+        if: steps.changes.outputs.src == 'true'
         run: |
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:${{ github.sha }}
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ matrix.service }}:latest
@@ -91,12 +104,26 @@ jobs:
           - notification-service
           - review-rating-service
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            src:
+              - '${{ matrix.service }}/**'
+              - '.github/workflows/**'
+
       - name: Azure login
+        if: steps.changes.outputs.src == 'true'
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Update Container App image
+        if: steps.changes.outputs.src == 'true'
         run: |
           az containerapp update \
             --name ${{ matrix.service }} \
@@ -105,6 +132,7 @@ jobs:
             --only-show-errors
 
       - name: Verify revision is running
+        if: steps.changes.outputs.src == 'true'
         run: |
           sleep 15
           STATUS=$(az containerapp show \
