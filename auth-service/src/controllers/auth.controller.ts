@@ -6,6 +6,9 @@ import VerificationCode from '../models/VerificationCode';
 import { sendOTP } from '../utils/email';
 import { generateToken } from '../utils/jwt';
 import mongoose from 'mongoose';
+import { OAuth2Client } from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID');
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -81,6 +84,10 @@ export const login = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Please verify your email first' });
     }
 
+    if (!user.passwordHash) {
+      return res.status(400).json({ message: 'This account uses Google Sign-In. Please login with Google.' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -92,6 +99,65 @@ export const login = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ message: 'Error logging in' });
+  }
+};
+
+export const googleAuth = async (req: Request, res: Response) => {
+  try {
+    const { credential, role } = req.body;
+    
+    // Verify Google Token
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
+    });
+    
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: 'Invalid Google token' });
+    }
+    
+    const email = payload.email;
+    const name = payload.name;
+    const googleId = payload.sub;
+    
+    // Determine Role
+    let assignedRole = role || 'Customer';
+    if (email === 'dilshancolonne123@gmail.com') {
+      assignedRole = 'Admin';
+    }
+    
+    // Find or create user
+    let user = await User.findOne({ email });
+    
+    if (user) {
+      // Update googleId if not present (they might have registered via email before)
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.isVerified = true; // Google accounts are implicitly verified
+      }
+      // Force Admin role if they are the special user, even if they existed as Customer
+      if (email === 'dilshancolonne123@gmail.com' && user.role !== 'Admin') {
+        user.role = 'Admin';
+      }
+      await user.save();
+    } else {
+      // Create new user
+      user = new User({
+        email,
+        name,
+        googleId,
+        role: assignedRole,
+        isVerified: true
+      });
+      await user.save();
+    }
+
+    const token = generateToken((user._id as mongoose.Types.ObjectId).toString(), user.role);
+    res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name } });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(500).json({ message: 'Error authenticating with Google' });
   }
 };
 
