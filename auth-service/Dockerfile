@@ -22,6 +22,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy compiled output from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
+COPY assets ./assets
 
 # Run as non-root user for security
 USER node

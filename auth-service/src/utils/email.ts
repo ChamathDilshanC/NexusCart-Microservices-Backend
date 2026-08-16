@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import path from 'path';
 
 export const sendOTP = async (email: string, otp: string, context: 'verify' | 'reset' = 'verify') => {
   const transporter = nodemailer.createTransport({
@@ -16,14 +17,12 @@ export const sendOTP = async (email: string, otp: string, context: 'verify' | 'r
 
   const actionTitle = context === 'reset' ? 'Your Reset Code' : 'Your Verification Code';
 
-  const logoUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/Logo/Logo%20with%20out%20Text.png`;
-
   const htmlTemplate = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #000000; color: #ffffff;">
       
       <!-- Header -->
       <div style="padding: 32px 20px; text-align: center;">
-        <img src="${logoUrl}" alt="NexusCart" style="height: 48px; width: auto; vertical-align: middle; margin-right: 12px; filter: invert(1);" />
+        <img src="cid:logo" alt="NexusCart" style="height: 48px; width: auto; vertical-align: middle; margin-right: 12px; filter: invert(1);" />
         <span style="font-size: 24px; font-weight: 600; vertical-align: middle; letter-spacing: -0.5px;">NexusCart</span>
       </div>
       
@@ -87,7 +86,12 @@ export const sendOTP = async (email: string, otp: string, context: 'verify' | 'r
     to: email,
     subject: context === 'reset' ? 'Your NexusCart Password Reset Code' : 'Your NexusCart Verification Code',
     text: `Your OTP for NexusCart is: ${otp}. It will expire in 10 minutes.`,
-    html: htmlTemplate
+    html: htmlTemplate,
+    attachments: [{
+      filename: 'logo.png',
+      path: path.join(__dirname, '../../assets/logo.png'),
+      cid: 'logo'
+    }]
   };
 
   await transporter.sendMail(mailOptions);
