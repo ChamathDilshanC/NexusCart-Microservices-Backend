@@ -1,13 +1,32 @@
 import { Request, Response } from 'express';
 import NotificationLog from '../models/NotificationLog';
+import nodemailer from 'nodemailer';
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 export const dispatchNotification = async (req: Request, res: Response) => {
   try {
     const { userId, type, payload } = req.body;
     
-    // Simulate sending email/sms
     console.log(`[NOTIFICATION] Dispatching ${type} to user ${userId}`);
-    console.log(`[NOTIFICATION] Payload:`, payload);
+    
+    if (type === 'EMAIL') {
+      const { to, subject, text, html } = payload;
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to,
+        subject,
+        text,
+        html
+      });
+      console.log(`[NOTIFICATION] Email sent to ${to}`);
+    }
 
     const log = new NotificationLog({
       userId,
@@ -20,6 +39,7 @@ export const dispatchNotification = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: 'Notification dispatched', log });
   } catch (error) {
+    console.error('Notification dispatch error:', error);
     res.status(500).json({ message: 'Error dispatching notification' });
   }
 };

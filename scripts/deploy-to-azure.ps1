@@ -137,6 +137,10 @@ if (Test-Path $LocalEnvFile) {
         $EmailPass = $envMap["EMAIL_PASS"]
         Write-Host "  EMAIL_USER/EMAIL_PASS imported from local .env." -ForegroundColor Green
     }
+    if ($envMap["GOOGLE_CLIENT_ID"]) {
+        $GoogleClientId = $envMap["GOOGLE_CLIENT_ID"]
+        Write-Host "  GOOGLE_CLIENT_ID imported from local .env." -ForegroundColor Green
+    }
 }
 
 # -----------------------------------------------------------------------------
@@ -286,6 +290,9 @@ foreach ($svc in $Microservices) {
     if ($EmailUser) {
         $envs += @{ Name = "EMAIL_USER"; Value = "secretref:email-user" }
         $envs += @{ Name = "EMAIL_PASS"; Value = "secretref:email-pass" }
+    }
+    if ($GoogleClientId) {
+        $envs += @{ Name = "GOOGLE_CLIENT_ID"; Value = "$GoogleClientId" }
     }
 
     try {

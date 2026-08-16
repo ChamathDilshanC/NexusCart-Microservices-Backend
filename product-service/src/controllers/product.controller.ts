@@ -46,7 +46,7 @@ export const getVendorProducts = async (req: AuthRequest, res: Response) => {
 
 export const getAllProducts = async (req: any, res: Response) => {
   try {
-    const products = await Product.find().populate('businessId', 'businessName');
+    const products = await Product.find().populate('businessId', 'businessName slug');
     res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching products' });
@@ -55,12 +55,72 @@ export const getAllProducts = async (req: any, res: Response) => {
 
 export const getProductById = async (req: any, res: Response) => {
   try {
-    const product = await Product.findById(req.params.id).populate('businessId', 'businessName');
+    const product = await Product.findById(req.params.id).populate('businessId', 'businessName slug');
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
     res.status(200).json(product);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching product' });
+  }
+};
+
+export const getProductsByBusiness = async (req: any, res: Response) => {
+  try {
+    const { businessId } = req.params;
+    const products = await Product.find({ businessId });
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching products' });
+  }
+};
+
+export const getProductsBySlug = async (req: any, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const business = await Business.findOne({ slug, status: 'Approved' });
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+    const products = await Product.find({ businessId: business._id });
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching products' });
+  }
+};
+
+export const deleteProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const business = await Business.findOne({ vendorId: req.user._id });
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+    const product = await Product.findOneAndDelete({ _id: req.params.id, businessId: business._id });
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.status(200).json({ message: 'Product deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting product' });
+  }
+};
+
+export const updateProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const business = await Business.findOne({ vendorId: req.user._id });
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, businessId: business._id },
+      req.body,
+      { new: true }
+    );
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.status(200).json({ message: 'Product updated', product });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating product' });
   }
 };
