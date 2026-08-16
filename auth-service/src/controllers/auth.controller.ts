@@ -123,7 +123,7 @@ export const googleAuth = async (req: Request, res: Response) => {
     
     // Determine Role
     let assignedRole = role || 'Customer';
-    if (email === 'dilshancolonne123@gmail.com') {
+    if (email === 'chamathdilshan.dev@gmail.com') {
       assignedRole = 'Admin';
     }
     
@@ -137,7 +137,7 @@ export const googleAuth = async (req: Request, res: Response) => {
         user.isVerified = true; // Google accounts are implicitly verified
       }
       // Force Admin role if they are the special user, even if they existed as Customer
-      if (email === 'dilshancolonne123@gmail.com' && user.role !== 'Admin') {
+      if (email === 'chamathdilshan.dev@gmail.com' && user.role !== 'Admin') {
         user.role = 'Admin';
       }
       await user.save();
