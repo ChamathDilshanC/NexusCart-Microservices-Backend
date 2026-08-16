@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export const sendOTP = async (email: string, otp: string) => {
+export const sendOTP = async (email: string, otp: string, context: 'verify' | 'reset' = 'verify') => {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -9,6 +9,11 @@ export const sendOTP = async (email: string, otp: string) => {
     }
   });
 
+  const title = context === 'reset' ? 'Reset your password' : 'Verify your email address';
+  const message = context === 'reset' 
+    ? 'Please use the verification code below to reset your NexusCart password.'
+    : 'Please use the verification code below to complete your NexusCart registration.';
+
   const htmlTemplate = `
     <div style="font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 30px;">
@@ -16,9 +21,9 @@ export const sendOTP = async (email: string, otp: string) => {
       </div>
       
       <div style="background-color: #fafafa; border: 1px solid #eaeaea; border-radius: 12px; padding: 40px; text-align: center;">
-        <h2 style="color: #111111; font-size: 20px; font-weight: 600; margin-top: 0; margin-bottom: 16px;">Verify your email address</h2>
+        <h2 style="color: #111111; font-size: 20px; font-weight: 600; margin-top: 0; margin-bottom: 16px;">${title}</h2>
         <p style="color: #666666; font-size: 15px; line-height: 24px; margin-bottom: 32px;">
-          Please use the verification code below to complete your NexusCart registration.
+          ${message}
         </p>
         
         <div style="background-color: #ffffff; border: 1px solid #eaeaea; border-radius: 8px; padding: 16px 24px; display: inline-block; margin-bottom: 32px;">
@@ -39,10 +44,10 @@ export const sendOTP = async (email: string, otp: string) => {
   `;
 
   const mailOptions = {
-    from: '"NexusCart" <' + process.env.EMAIL_USER + '>', // Sets sender name to NexusCart
+    from: '"NexusCart" <' + process.env.EMAIL_USER + '>',
     to: email,
-    subject: 'Your NexusCart Verification Code',
-    text: `Your OTP for NexusCart registration is: ${otp}. It will expire in 10 minutes.`, // Fallback for clients that don't support HTML
+    subject: context === 'reset' ? 'Your NexusCart Password Reset Code' : 'Your NexusCart Verification Code',
+    text: `Your OTP for NexusCart is: ${otp}. It will expire in 10 minutes.`,
     html: htmlTemplate
   };
 
