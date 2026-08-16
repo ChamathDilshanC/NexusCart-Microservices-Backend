@@ -23,8 +23,8 @@ export const sendOTP = async (email: string, otp: string, context: 'verify' | 'r
       
       <!-- Header -->
       <div style="padding: 32px 20px; text-align: center;">
-        <img src="${logoUrl}" alt="NexusCart" style="height: 24px; width: auto; vertical-align: middle; margin-right: 8px; filter: invert(1);" />
-        <span style="font-size: 20px; font-weight: 600; vertical-align: middle; letter-spacing: -0.5px;">NexusCart</span>
+        <img src="${logoUrl}" alt="NexusCart" style="height: 48px; width: auto; vertical-align: middle; margin-right: 12px; filter: invert(1);" />
+        <span style="font-size: 24px; font-weight: 600; vertical-align: middle; letter-spacing: -0.5px;">NexusCart</span>
       </div>
       
       <!-- Main White Section -->
