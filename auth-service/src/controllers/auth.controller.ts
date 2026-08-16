@@ -33,32 +33,42 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Also check if there's already a pending registration for this email
+    const pendingRegistration = await VerificationCode.findOne({ email, type: 'registration' });
+    if (pendingRegistration) {
+      return res.status(400).json({ message: 'A registration is already pending for this email. Please verify with the OTP sent earlier.' });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = new User({ email, passwordHash, name, role });
-    await user.save();
 
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = await bcrypt.hash(otp, 10);
 
-    // Save OTP to DB
+    // Save OTP + pending user data to DB (user is NOT created yet)
     await VerificationCode.findOneAndUpdate(
       { email },
-      { code: otpHash, createdAt: new Date() },
+      {
+        code: otpHash,
+        type: 'registration',
+        pendingName: name,
+        pendingPasswordHash: passwordHash,
+        pendingRole: role || 'Customer',
+        createdAt: new Date()
+      },
       { upsert: true, new: true }
     );
 
-    // Send email — non-blocking: user is created even if email fails
+    // Send email — non-blocking
     try {
       await sendOTP(email, otp);
     } catch (emailError: any) {
-      console.error('Email sending failed (user still created):', emailError?.message || emailError);
+      console.error('Email sending failed (pending registration saved):', emailError?.message || emailError);
     }
 
-    res.status(201).json({ message: 'Registration successful. Please verify your email.' });
+    res.status(201).json({ message: 'OTP sent to your email. Please verify to complete registration.' });
   } catch (error: any) {
     console.error('Registration Error:', error?.message || error);
-    // Return specific error in development, generic in production
     const message = process.env.NODE_ENV === 'production'
       ? 'Error registering user'
       : `Error registering user: ${error?.message || 'Unknown error'}`;
@@ -70,7 +80,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
 
-    const record = await VerificationCode.findOne({ email });
+    const record = await VerificationCode.findOne({ email, type: 'registration' });
     if (!record) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
@@ -80,15 +90,28 @@ export const verifyOTP = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-    // Mark user as verified
-    await User.findOneAndUpdate({ email }, { isVerified: true });
-    
-    // Delete OTP record
-    await VerificationCode.deleteOne({ email });
+    // Only NOW create the User in DB — after OTP is verified
+    const user = new User({
+      email: record.email,
+      name: record.pendingName,
+      passwordHash: record.pendingPasswordHash,
+      role: record.pendingRole || 'Customer',
+      isVerified: true
+    });
+    await user.save();
 
-    res.status(200).json({ message: 'Email verified successfully' });
+    // Delete the pending registration record
+    await VerificationCode.deleteOne({ email, type: 'registration' });
+
+    // Generate token and return it so user is logged in immediately
+    const token = generateToken((user._id as mongoose.Types.ObjectId).toString(), user.role);
+    res.status(200).json({
+      message: 'Email verified successfully. Registration complete.',
+      token,
+      user: { id: user._id, email: user.email, role: user.role, name: user.name }
+    });
   } catch (error) {
-    console.error("Verify OTP Error:", error);
+    console.error('Verify OTP Error:', error);
     res.status(500).json({ message: 'Error verifying OTP' });
   }
 };
@@ -200,11 +223,15 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     await VerificationCode.findOneAndUpdate(
       { email },
-      { code: otpHash, createdAt: new Date() },
+      { code: otpHash, type: 'reset', createdAt: new Date() },
       { upsert: true, new: true }
     );
 
-    await sendOTP(email, otp, 'reset');
+    try {
+      await sendOTP(email, otp, 'reset');
+    } catch (emailError: any) {
+      console.error('Reset email sending failed:', emailError?.message || emailError);
+    }
 
     res.status(200).json({ message: 'Password reset OTP sent to email' });
   } catch (error) {
@@ -217,7 +244,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { email, otp, newPassword } = req.body;
 
-    const record = await VerificationCode.findOne({ email });
+    const record = await VerificationCode.findOne({ email, type: 'reset' });
     if (!record) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
@@ -229,7 +256,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await User.findOneAndUpdate({ email }, { passwordHash });
-    await VerificationCode.deleteOne({ email });
+    await VerificationCode.deleteOne({ email, type: 'reset' });
 
     res.status(200).json({ message: 'Password reset successful' });
   } catch (error) {
