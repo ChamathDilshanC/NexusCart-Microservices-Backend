@@ -31,7 +31,8 @@ export const addReview = async (req: any, res: Response) => {
 
 export const getProductReviews = async (req: Request, res: Response) => {
   try {
-    const reviews = await Review.find({ productId: req.params.productId }).sort({ createdAt: -1 });
+    const reviews = await Review.find({ productId: req.params.productId });
+    reviews.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.status(200).json(reviews);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reviews' });
@@ -40,7 +41,8 @@ export const getProductReviews = async (req: Request, res: Response) => {
 
 export const getBusinessReviews = async (req: Request, res: Response) => {
   try {
-    const reviews = await Review.find({ businessId: req.params.businessId }).sort({ createdAt: -1 });
+    const reviews = await Review.find({ businessId: req.params.businessId });
+    reviews.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.status(200).json(reviews);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching business reviews' });

@@ -25,13 +25,18 @@ export const getAllProducts = async (req: any, res: Response) => {
       filter.isFeatured = true;
     }
 
-    let sortOption: any = { createdAt: -1 };
-    if (sort === 'price_asc') sortOption = { price: 1 };
-    else if (sort === 'price_desc') sortOption = { price: -1 };
-    else if (sort === 'name_asc') sortOption = { name: 1 };
-    else if (sort === 'newest') sortOption = { createdAt: -1 };
+    const products = await Product.find(filter);
 
-    const products = await Product.find(filter).sort(sortOption);
+    // Sort in memory (Cosmos DB doesn't support order-by on non-indexed fields)
+    const sortFns: Record<string, (a: any, b: any) => number> = {
+      price_asc: (a, b) => a.price - b.price,
+      price_desc: (a, b) => b.price - a.price,
+      name_asc: (a, b) => a.name.localeCompare(b.name),
+      newest: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    };
+    const sortFn = sortFns[sort as string] || sortFns.newest;
+    products.sort(sortFn);
+
     res.status(200).json(products);
   } catch (error) {
     console.error('getAllProducts error:', error);

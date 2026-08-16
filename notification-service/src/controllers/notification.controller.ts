@@ -46,7 +46,8 @@ export const dispatchNotification = async (req: Request, res: Response) => {
 
 export const getNotificationLogs = async (req: any, res: Response) => {
   try {
-    const logs = await NotificationLog.find({ userId: req.user.id || req.user._id }).sort({ createdAt: -1 });
+    const logs = await NotificationLog.find({ userId: req.user.id || req.user._id });
+    logs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.status(200).json(logs);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching notification logs' });

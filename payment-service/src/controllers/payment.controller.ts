@@ -50,7 +50,8 @@ export const processPayment = async (req: any, res: Response) => {
 
 export const getTransactionHistory = async (req: any, res: Response) => {
   try {
-    const payments = await Payment.find({ userId: req.user.id || req.user._id }).sort({ createdAt: -1 });
+    const payments = await Payment.find({ userId: req.user.id || req.user._id });
+    payments.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.status(200).json(payments);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching transactions' });

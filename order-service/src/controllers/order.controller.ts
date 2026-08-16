@@ -38,7 +38,8 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 // Authenticated user: Get own orders
 export const getUserOrders = async (req: AuthRequest, res: Response) => {
   try {
-    const orders = await Order.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId: req.user._id });
+    orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.status(200).json(orders);
   } catch (error) {
     console.error('getUserOrders error:', error);
@@ -49,7 +50,8 @@ export const getUserOrders = async (req: AuthRequest, res: Response) => {
 // Admin: Get all orders
 export const getAllOrders = async (req: AuthRequest, res: Response) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const orders = await Order.find();
+    orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.status(200).json(orders);
   } catch (error) {
     console.error('getAllOrders error:', error);
