@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
   getAllUsers, getSystemMetrics,
   getAllProducts, createProduct, updateProduct, deleteProduct,
-  getAllOrders, updateOrderStatus
+  getAllOrders, updateOrderStatus,
+  getAllBanners, createBanner, updateBanner, deleteBanner
 } from '../controllers/admin.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
 
@@ -27,5 +28,11 @@ router.delete('/products/:id', deleteProduct);
 // Order management (proxied to order-service)
 router.get('/orders', getAllOrders);
 router.patch('/orders/:id/status', updateOrderStatus);
+
+// Banner management (proxied to product-service)
+router.get('/banners', getAllBanners);
+router.post('/banners', createBanner);
+router.put('/banners/:id', updateBanner);
+router.delete('/banners/:id', deleteBanner);
 
 export default router;
