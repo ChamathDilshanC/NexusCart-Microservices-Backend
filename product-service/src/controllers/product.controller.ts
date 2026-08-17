@@ -26,6 +26,7 @@ export const getAllProducts = async (req: any, res: Response) => {
     }
 
     const products = await Product.find(filter);
+    console.log(`[DIAG] getAllProducts: db=${Product.db.name} filter=${JSON.stringify(filter)} found=${products.length} totalInCollection=${await Product.countDocuments({})}`);
 
     // Sort in memory (Cosmos DB doesn't support order-by on non-indexed fields)
     const sortFns: Record<string, (a: any, b: any) => number> = {
@@ -84,6 +85,9 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
     });
 
     await product.save();
+    const countAfterSave = await Product.countDocuments({});
+    const refetched = await Product.findById(product._id);
+    console.log(`[DIAG] createProduct: db=${Product.db.name} savedId=${product._id} countAfterSave=${countAfterSave} refetchedById=${refetched ? 'FOUND' : 'MISSING'}`);
     res.status(201).json({ message: 'Product created successfully', product });
   } catch (error) {
     console.error('createProduct error:', error);
