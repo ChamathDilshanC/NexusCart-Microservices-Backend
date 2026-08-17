@@ -25,7 +25,7 @@ export const processPayment = async (req: any, res: Response) => {
     if (isSuccess) {
       // Update order status synchronously to avoid inconsistent state for the user
       const orderUrl = process.env.ORDER_SERVICE_URL || 'http://127.0.0.1:5005';
-      await axios.patch(`${orderUrl}/api/orders/${orderId}/status`, {
+      await axios.patch(`${orderUrl}/orders/${orderId}/status`, {
         status: 'PAID'
       }, {
         headers: { Authorization: req.header('Authorization') }
@@ -33,7 +33,7 @@ export const processPayment = async (req: any, res: Response) => {
 
       // Send payment success notification
       const notifUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007';
-      axios.post(`${notifUrl}/api/notifications/send`, {
+      axios.post(`${notifUrl}/notifications/send`, {
         userId: req.user.id || req.user._id,
         type: 'PAYMENT_SUCCESS',
         payload: { transactionId, amount, orderId }

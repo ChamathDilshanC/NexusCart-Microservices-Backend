@@ -22,7 +22,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     // Notify Notification Service asynchronously
     const notifUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007';
-    axios.post(`${notifUrl}/api/notifications/send`, {
+    axios.post(`${notifUrl}/notifications/send`, {
       userId: req.user._id,
       type: 'ORDER_CREATED',
       payload: { orderId: order._id, totalAmount }
@@ -68,7 +68,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
 
     // Notify status update
     const notifUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1:5007';
-    axios.post(`${notifUrl}/api/notifications/send`, {
+    axios.post(`${notifUrl}/notifications/send`, {
       userId: order.userId,
       type: 'ORDER_UPDATED',
       payload: { orderId: order._id, status }
