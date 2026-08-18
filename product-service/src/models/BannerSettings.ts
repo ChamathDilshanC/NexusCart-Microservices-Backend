@@ -1,9 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export type BannerLayout = 'carousel' | 'grid' | 'spotlight';
+export type BannerPosition = 'top' | 'above-grid' | 'bottom';
 
 export interface IBannerSettings extends Document {
   layout: BannerLayout;
+  position: BannerPosition;
   options: {
     carousel: {
       autoAdvance: boolean;
@@ -28,6 +30,7 @@ export interface IBannerSettings extends Document {
 
 const BannerSettingsSchema: Schema = new Schema({
   layout: { type: String, enum: ['carousel', 'grid', 'spotlight'], default: 'carousel' },
+  position: { type: String, enum: ['top', 'above-grid', 'bottom'], default: 'top' },
   options: {
     carousel: {
       autoAdvance: { type: Boolean, default: true },

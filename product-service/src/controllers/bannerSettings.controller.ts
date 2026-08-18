@@ -4,6 +4,7 @@ import BannerSettings from '../models/BannerSettings';
 
 const DEFAULT_BANNER_SETTINGS = {
   layout: 'carousel',
+  position: 'top',
   options: {
     carousel: { autoAdvance: true, intervalMs: 5000, showArrows: true, showDots: true, height: 'standard' },
     grid: { columns: 3, aspectRatio: 'landscape', showSubtitle: true },
@@ -25,10 +26,10 @@ export const getBannerSettings = async (req: Request, res: Response) => {
 // Admin: Update banner display settings (singleton upsert)
 export const updateBannerSettings = async (req: AuthRequest, res: Response) => {
   try {
-    const { layout, options } = req.body;
+    const { layout, position, options } = req.body;
     const settings = await BannerSettings.findOneAndUpdate(
       {},
-      { layout, options },
+      { layout, position, options },
       { new: true, upsert: true, runValidators: true }
     );
     res.status(200).json({ message: 'Banner settings updated', settings });
