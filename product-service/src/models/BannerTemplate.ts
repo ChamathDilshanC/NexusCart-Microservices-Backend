@@ -3,9 +3,12 @@ import mongoose, { Schema, Document } from 'mongoose';
 export type BannerLayout = 'carousel' | 'grid' | 'spotlight';
 export type BannerPosition = 'top' | 'above-grid' | 'bottom';
 
-export interface IBannerSettings extends Document {
+export interface IBannerTemplate extends Document {
+  name: string;
   layout: BannerLayout;
   position: BannerPosition;
+  isActive: boolean;
+  order: number;
   options: {
     carousel: {
       autoAdvance: boolean;
@@ -28,9 +31,12 @@ export interface IBannerSettings extends Document {
   updatedAt: Date;
 }
 
-const BannerSettingsSchema: Schema = new Schema({
+const BannerTemplateSchema: Schema = new Schema({
+  name: { type: String, required: true },
   layout: { type: String, enum: ['carousel', 'grid', 'spotlight'], default: 'carousel' },
   position: { type: String, enum: ['top', 'above-grid', 'bottom'], default: 'top' },
+  isActive: { type: Boolean, default: true },
+  order: { type: Number, default: 0 },
   options: {
     carousel: {
       autoAdvance: { type: Boolean, default: true },
@@ -51,4 +57,4 @@ const BannerSettingsSchema: Schema = new Schema({
   }
 }, { timestamps: true });
 
-export default mongoose.model<IBannerSettings>('BannerSettings', BannerSettingsSchema);
+export default mongoose.model<IBannerTemplate>('BannerTemplate', BannerTemplateSchema);
