@@ -203,3 +203,33 @@ export const deleteBanner = async (req: AuthRequest, res: Response) => {
     res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting banner', detail: error.response?.data || error.message });
   }
 };
+
+// Banner display settings (proxy to product-service)
+export const getBannerSettings = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.get(`${productServiceUrl()}/products/banner-settings`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('getBannerSettings proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: 'Error fetching banner settings', detail: error.response?.data || error.message });
+  }
+};
+
+export const updateBannerSettings = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.put(`${productServiceUrl()}/products/banner-settings`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('updateBannerSettings proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating banner settings', detail: error.response?.data || error.message });
+  }
+};

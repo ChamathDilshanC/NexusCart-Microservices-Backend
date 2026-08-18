@@ -3,7 +3,8 @@ import {
   getAllUsers, getSystemMetrics,
   getAllProducts, createProduct, updateProduct, deleteProduct,
   getAllOrders, updateOrderStatus,
-  getAllBanners, createBanner, updateBanner, deleteBanner
+  getAllBanners, createBanner, updateBanner, deleteBanner,
+  getBannerSettings, updateBannerSettings
 } from '../controllers/admin.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
 
@@ -34,5 +35,9 @@ router.get('/banners', getAllBanners);
 router.post('/banners', createBanner);
 router.put('/banners/:id', updateBanner);
 router.delete('/banners/:id', deleteBanner);
+
+// Banner display settings (proxied to product-service)
+router.get('/banner-settings', getBannerSettings);
+router.put('/banner-settings', updateBannerSettings);
 
 export default router;
