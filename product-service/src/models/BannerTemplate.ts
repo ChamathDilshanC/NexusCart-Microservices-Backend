@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type BannerLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar';
+export type BannerLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar' | 'showcase';
 export type BannerPosition = 'top' | 'above-grid' | 'bottom' | 'sidebar';
 
 export interface IBannerTemplate extends Document {
@@ -32,6 +32,13 @@ export interface IBannerTemplate extends Document {
       autoAdvance: boolean;
       intervalMs: number;
     };
+    // A row of banners shown at once — two large ones in the center flanked
+    // by smaller peeking ones, sliding by one banner at a time.
+    showcase: {
+      autoAdvance: boolean;
+      intervalMs: number;
+      showArrows: boolean;
+    };
   };
   createdAt: Date;
   updatedAt: Date;
@@ -39,7 +46,7 @@ export interface IBannerTemplate extends Document {
 
 const BannerTemplateSchema: Schema = new Schema({
   name: { type: String, required: true },
-  layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar'], default: 'carousel' },
+  layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar', 'showcase'], default: 'carousel' },
   position: { type: String, enum: ['top', 'above-grid', 'bottom', 'sidebar'], default: 'top' },
   isActive: { type: Boolean, default: true },
   order: { type: Number, default: 0 },
@@ -63,6 +70,11 @@ const BannerTemplateSchema: Schema = new Schema({
     sidebar: {
       autoAdvance: { type: Boolean, default: true },
       intervalMs: { type: Number, default: 4000, min: 2000, max: 15000 }
+    },
+    showcase: {
+      autoAdvance: { type: Boolean, default: true },
+      intervalMs: { type: Number, default: 5000, min: 2000, max: 10000 },
+      showArrows: { type: Boolean, default: true }
     }
   }
 }, { timestamps: true });
