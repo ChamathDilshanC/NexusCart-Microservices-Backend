@@ -1,6 +1,47 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import Product from '../models/Product';
+import Promotion, { IPromotion } from '../models/Promotion';
+
+// Finds every active promotion that applies to a product and keeps whichever
+// gives the lowest final price (no stacking).
+function applyBestPromotion(product: any, activePromotions: IPromotion[]) {
+  const matching = activePromotions.filter((promo) => {
+    if (promo.scope === 'all') return true;
+    if (promo.scope === 'category') return promo.category === product.category;
+    if (promo.scope === 'products') {
+      return promo.productIds.some((id) => id.toString() === product._id.toString());
+    }
+    return false;
+  });
+
+  let bestPrice = product.price;
+  let bestPromo: IPromotion | null = null;
+  for (const promo of matching) {
+    const price =
+      promo.discountType === 'percentage'
+        ? product.price * (1 - promo.discountValue / 100)
+        : product.price - promo.discountValue;
+    const clamped = Math.max(0, price);
+    if (clamped < bestPrice) {
+      bestPrice = clamped;
+      bestPromo = promo;
+    }
+  }
+
+  if (!bestPromo) {
+    return { ...product, effectivePrice: product.price, discountPercent: 0, promotionName: null };
+  }
+
+  const effectivePrice = Math.round(bestPrice * 100) / 100;
+  const discountPercent = Math.round((1 - effectivePrice / product.price) * 100);
+  return { ...product, effectivePrice, discountPercent, promotionName: bestPromo.name };
+}
+
+async function enrichWithPromotions(products: any[]) {
+  const activePromotions = await Promotion.find({ isActive: true });
+  return products.map((p) => applyBestPromotion(p.toObject(), activePromotions));
+}
 
 // Public: Get all products with optional search, filter, and sort
 export const getAllProducts = async (req: any, res: Response) => {
@@ -37,7 +78,7 @@ export const getAllProducts = async (req: any, res: Response) => {
     const sortFn = sortFns[sort as string] || sortFns.newest;
     products.sort(sortFn);
 
-    res.status(200).json(products);
+    res.status(200).json(await enrichWithPromotions(products));
   } catch (error) {
     console.error('getAllProducts error:', error);
     res.status(500).json({ message: 'Error fetching products', error: (error as Error).message });
@@ -61,7 +102,8 @@ export const getProductById = async (req: any, res: Response) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
-    res.status(200).json(product);
+    const [enriched] = await enrichWithPromotions([product]);
+    res.status(200).json(enriched);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching product' });
   }

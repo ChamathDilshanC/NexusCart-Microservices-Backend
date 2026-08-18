@@ -4,7 +4,8 @@ import {
   getAllProducts, createProduct, updateProduct, deleteProduct,
   getAllOrders, updateOrderStatus,
   getAllBanners, createBanner, updateBanner, deleteBanner,
-  getAllBannerTemplates, createBannerTemplate, updateBannerTemplate, deleteBannerTemplate
+  getAllBannerTemplates, createBannerTemplate, updateBannerTemplate, deleteBannerTemplate,
+  getAllPromotions, createPromotion, updatePromotion, deletePromotion
 } from '../controllers/admin.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
 
@@ -41,5 +42,11 @@ router.get('/banner-templates', getAllBannerTemplates);
 router.post('/banner-templates', createBannerTemplate);
 router.put('/banner-templates/:id', updateBannerTemplate);
 router.delete('/banner-templates/:id', deleteBannerTemplate);
+
+// Promotions (proxied to product-service)
+router.get('/promotions', getAllPromotions);
+router.post('/promotions', createPromotion);
+router.put('/promotions/:id', updatePromotion);
+router.delete('/promotions/:id', deletePromotion);
 
 export default router;

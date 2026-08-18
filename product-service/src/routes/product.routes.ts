@@ -8,6 +8,7 @@ import {
   updateBannerTemplate,
   deleteBannerTemplate
 } from '../controllers/bannerTemplate.controller';
+import { getAllPromotions, createPromotion, updatePromotion, deletePromotion } from '../controllers/promotion.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
 
 const router = Router();
@@ -35,5 +36,11 @@ router.get('/banner-templates-admin/all', authenticate, authorizeRole(['Admin'])
 router.post('/banner-templates', authenticate, authorizeRole(['Admin']), createBannerTemplate);
 router.put('/banner-templates/:id', authenticate, authorizeRole(['Admin']), updateBannerTemplate);
 router.delete('/banner-templates/:id', authenticate, authorizeRole(['Admin']), deleteBannerTemplate);
+
+// Promotion admin routes
+router.get('/promotions-admin/all', authenticate, authorizeRole(['Admin']), getAllPromotions);
+router.post('/promotions', authenticate, authorizeRole(['Admin']), createPromotion);
+router.put('/promotions/:id', authenticate, authorizeRole(['Admin']), updatePromotion);
+router.delete('/promotions/:id', authenticate, authorizeRole(['Admin']), deletePromotion);
 
 export default router;

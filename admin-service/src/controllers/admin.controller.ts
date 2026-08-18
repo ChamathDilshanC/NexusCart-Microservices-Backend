@@ -262,3 +262,62 @@ export const deleteBannerTemplate = async (req: AuthRequest, res: Response) => {
     res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting banner template', detail: error.response?.data || error.message });
   }
 };
+
+// Promotions (proxy to product-service)
+export const getAllPromotions = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.get(`${productServiceUrl()}/products/promotions-admin/all`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('getAllPromotions proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: 'Error fetching promotions', detail: error.response?.data || error.message });
+  }
+};
+
+export const createPromotion = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.post(`${productServiceUrl()}/products/promotions`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(201).json(response.data);
+  } catch (error: any) {
+    console.error('createPromotion proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error creating promotion', detail: error.response?.data || error.message });
+  }
+};
+
+export const updatePromotion = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.put(`${productServiceUrl()}/products/promotions/${req.params.id}`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('updatePromotion proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating promotion', detail: error.response?.data || error.message });
+  }
+};
+
+export const deletePromotion = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.delete(`${productServiceUrl()}/products/promotions/${req.params.id}`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('deletePromotion proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting promotion', detail: error.response?.data || error.message });
+  }
+};
