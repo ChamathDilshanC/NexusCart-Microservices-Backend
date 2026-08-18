@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type BannerLayout = 'carousel' | 'grid' | 'spotlight';
-export type BannerPosition = 'top' | 'above-grid' | 'bottom';
+export type BannerLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar';
+export type BannerPosition = 'top' | 'above-grid' | 'bottom' | 'sidebar';
 
 export interface IBannerTemplate extends Document {
   name: string;
@@ -26,6 +26,12 @@ export interface IBannerTemplate extends Document {
       maxListItems: number;
       showListSubtitle: boolean;
     };
+    // Small rail banners fixed to the left+right margins of the page,
+    // auto-rotating through every banner tagged to this template.
+    sidebar: {
+      autoAdvance: boolean;
+      intervalMs: number;
+    };
   };
   createdAt: Date;
   updatedAt: Date;
@@ -33,8 +39,8 @@ export interface IBannerTemplate extends Document {
 
 const BannerTemplateSchema: Schema = new Schema({
   name: { type: String, required: true },
-  layout: { type: String, enum: ['carousel', 'grid', 'spotlight'], default: 'carousel' },
-  position: { type: String, enum: ['top', 'above-grid', 'bottom'], default: 'top' },
+  layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar'], default: 'carousel' },
+  position: { type: String, enum: ['top', 'above-grid', 'bottom', 'sidebar'], default: 'top' },
   isActive: { type: Boolean, default: true },
   order: { type: Number, default: 0 },
   options: {
@@ -53,6 +59,10 @@ const BannerTemplateSchema: Schema = new Schema({
     spotlight: {
       maxListItems: { type: Number, default: 4, min: 1, max: 8 },
       showListSubtitle: { type: Boolean, default: false }
+    },
+    sidebar: {
+      autoAdvance: { type: Boolean, default: true },
+      intervalMs: { type: Number, default: 4000, min: 2000, max: 15000 }
     }
   }
 }, { timestamps: true });
