@@ -30,14 +30,15 @@ export const getAllBanners = async (req: AuthRequest, res: Response) => {
 // Admin: Create banner
 export const createBanner = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, subtitle, imageUrl, linkUrl, order, isActive } = req.body;
+    const { title, subtitle, imageUrl, linkUrl, order, isActive, layouts } = req.body;
     const banner = new Banner({
       title,
       subtitle: subtitle || '',
       imageUrl,
       linkUrl: linkUrl || '',
       order: order ?? 0,
-      isActive: isActive ?? true
+      isActive: isActive ?? true,
+      layouts: Array.isArray(layouts) ? layouts : []
     });
     await banner.save();
     res.status(201).json({ message: 'Banner created', banner });
