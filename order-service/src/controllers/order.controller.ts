@@ -30,8 +30,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       type: 'ORDER_CREATED',
       payload: {
         to: order.customerEmail,
+        customerEmail: order.customerEmail,
         customerName: order.customerName,
         orderId: order._id,
+        status: order.status,
         items: order.items,
         totalAmount: order.totalAmount,
         shippingAddress: order.shippingAddress,

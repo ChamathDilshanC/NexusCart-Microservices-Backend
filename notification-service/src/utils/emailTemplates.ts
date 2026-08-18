@@ -7,6 +7,8 @@ interface OrderItemPayload {
 interface OrderConfirmationPayload {
   orderId: string;
   customerName?: string;
+  customerEmail?: string;
+  status?: string;
   items: OrderItemPayload[];
   totalAmount: number;
   shippingAddress?: {
@@ -36,6 +38,11 @@ function shortOrderId(orderId: string) {
   return orderId.slice(-8).toUpperCase();
 }
 
+function formatDate(iso?: string) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 function formatAddress(addr?: OrderConfirmationPayload['shippingAddress']) {
   if (!addr) return '';
   return [addr.street, addr.city, addr.state, addr.zipCode, addr.country].filter(Boolean).join(', ');
@@ -49,27 +56,75 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: '#dc2626'
 };
 
-function emailShell(headerTitle: string, bodyHtml: string) {
+// White, rounded "document" card floating on a black canvas — matches the
+// look of the /orders/[id]/invoice page so the emailed copy and the printable
+// invoice read as the same document.
+function emailShell(bodyHtml: string) {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #000000; color: #ffffff;">
-      <div style="padding: 32px 20px; text-align: center;">
-        <span style="font-size: 24px; font-weight: 600; letter-spacing: -0.5px;">NexusCart</span>
-      </div>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #000000; padding: 32px 16px;">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <div style="text-align: center; padding-bottom: 24px;">
+          <span style="color: #ffffff; font-size: 22px; font-weight: 600; letter-spacing: -0.5px;">NexusCart</span>
+        </div>
 
-      <div style="background-color: #ffffff; color: #000000; padding: 48px 40px;">
-        <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 500; margin: 0 0 32px 0; letter-spacing: -1px; text-align: center;">
-          ${headerTitle}
-        </h1>
-        ${bodyHtml}
-      </div>
+        <div style="background-color: #ffffff; color: #18181b; border-radius: 16px; padding: 40px;">
+          ${bodyHtml}
+        </div>
 
-      <div style="background-color: #f4f4f5; color: #71717a; padding: 32px 20px; text-align: center; font-size: 12px; line-height: 20px;">
-        <p style="margin: 0;">
-          NexusCart Inc.<br>
-          &copy; ${new Date().getFullYear()} NexusCart
-        </p>
+        <div style="text-align: center; padding-top: 24px; color: #71717a; font-size: 12px; line-height: 20px;">
+          NexusCart Inc.<br>&copy; ${new Date().getFullYear()} NexusCart
+        </div>
       </div>
     </div>
+  `;
+}
+
+// Header row shared by both emails: wordmark + document type on the left,
+// order number / date / status pill on the right — mirrors the invoice
+// page's header exactly.
+function documentHeader(kind: string, orderId: string, status?: string, createdAt?: string) {
+  const date = formatDate(createdAt);
+  return `
+    <table role="presentation" width="100%" style="border-collapse: collapse;">
+      <tr>
+        <td style="vertical-align: top;">
+          <div style="font-size: 20px; font-weight: 600; color: #18181b; letter-spacing: -0.3px;">NexusCart</div>
+          <div style="font-size: 12px; color: #71717a; margin-top: 2px;">${kind}</div>
+        </td>
+        <td style="vertical-align: top; text-align: right;">
+          <div style="font-size: 14px; font-weight: 600; color: #18181b;">#${shortOrderId(orderId)}</div>
+          ${date ? `<div style="font-size: 12px; color: #71717a; margin-top: 2px;">${date}</div>` : ''}
+          ${
+            status
+              ? `<span style="display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 100px; background-color: #f4f4f5; color: #3f3f46;">${status}</span>`
+              : ''
+          }
+        </td>
+      </tr>
+    </table>
+    <div style="border-bottom: 1px solid #e4e4e7; margin: 20px 0 24px 0;"></div>
+  `;
+}
+
+function billToShipTo(customerName: string | undefined, customerEmail: string | undefined, address: string) {
+  return `
+    <table role="presentation" width="100%" style="border-collapse: collapse; margin-bottom: 24px;">
+      <tr>
+        <td style="vertical-align: top; width: 50%; padding-right: 12px;">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 6px;">Bill to</div>
+          <div style="font-size: 14px; font-weight: 500; color: #18181b;">${customerName || '—'}</div>
+          ${customerEmail ? `<div style="font-size: 13px; color: #71717a;">${customerEmail}</div>` : ''}
+        </td>
+        ${
+          address
+            ? `<td style="vertical-align: top; width: 50%; padding-left: 12px;">
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 6px;">Ship to</div>
+                <div style="font-size: 13px; color: #71717a; line-height: 18px;">${address}</div>
+              </td>`
+            : '<td style="width: 50%;"></td>'
+        }
+      </tr>
+    </table>
   `;
 }
 
@@ -78,24 +133,36 @@ function itemsTable(items: OrderItemPayload[]) {
     .map(
       (item) => `
         <tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #eaeaea; font-size: 14px; color: #18181b;">${item.name}</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #eaeaea; font-size: 14px; color: #71717a; text-align: center;">${item.quantity}</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #eaeaea; font-size: 14px; color: #18181b; text-align: right;">${formatCurrency(item.price * item.quantity)}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #18181b;">${item.name}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #71717a; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #71717a; text-align: right;">${formatCurrency(item.price)}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #18181b; font-weight: 500; text-align: right;">${formatCurrency(item.price * item.quantity)}</td>
         </tr>`
     )
     .join('');
 
   return `
-    <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+    <table role="presentation" width="100%" style="border-collapse: collapse;">
       <thead>
         <tr>
-          <th style="text-align: left; padding-bottom: 8px; border-bottom: 2px solid #18181b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a;">Item</th>
-          <th style="text-align: center; padding-bottom: 8px; border-bottom: 2px solid #18181b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a;">Qty</th>
-          <th style="text-align: right; padding-bottom: 8px; border-bottom: 2px solid #18181b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a;">Total</th>
+          <th style="text-align: left; padding-bottom: 8px; border-bottom: 2px solid #18181b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a; font-weight: 500;">Item</th>
+          <th style="text-align: center; padding-bottom: 8px; border-bottom: 2px solid #18181b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a; font-weight: 500;">Qty</th>
+          <th style="text-align: right; padding-bottom: 8px; border-bottom: 2px solid #18181b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a; font-weight: 500;">Price</th>
+          <th style="text-align: right; padding-bottom: 8px; border-bottom: 2px solid #18181b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #71717a; font-weight: 500;">Total</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
+  `;
+}
+
+function invoiceButton(invoiceUrl: string) {
+  return `
+    <div style="text-align: center; margin-top: 32px;">
+      <a href="${invoiceUrl}" style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 100px; padding: 14px 32px; font-size: 14px; font-weight: 600;">
+        View invoice
+      </a>
+    </div>
   `;
 }
 
@@ -104,35 +171,27 @@ export function renderOrderConfirmationEmail(payload: OrderConfirmationPayload) 
   const address = formatAddress(payload.shippingAddress);
   const invoiceUrl = `${frontendUrl()}/orders/${payload.orderId}/invoice`;
 
-  const html = emailShell(
-    'Order Confirmed',
-    `
-      <p style="font-size: 15px; line-height: 24px; color: #444444; text-align: center; margin: 0 0 8px 0;">
-        ${greeting} Your order <strong>#${shortOrderId(payload.orderId)}</strong> has been received and is being processed.
-      </p>
+  const html = emailShell(`
+    ${documentHeader('Invoice', payload.orderId, payload.status || 'PENDING', payload.createdAt)}
 
-      ${itemsTable(payload.items)}
+    <p style="font-size: 14px; line-height: 22px; color: #52525b; margin: 0 0 24px 0;">
+      ${greeting} Your order has been received and is being processed.
+    </p>
 
-      <div style="display: flex; justify-content: space-between; padding-top: 16px; border-top: 2px solid #18181b;">
-        <table style="width: 100%;"><tr>
-          <td style="font-size: 16px; font-weight: 600; color: #18181b;">Total</td>
-          <td style="font-size: 16px; font-weight: 600; color: #18181b; text-align: right;">${formatCurrency(payload.totalAmount)}</td>
-        </tr></table>
-      </div>
+    ${billToShipTo(payload.customerName, payload.customerEmail, address)}
+    ${itemsTable(payload.items)}
 
-      ${
-        address
-          ? `<p style="font-size: 13px; line-height: 20px; color: #71717a; margin: 24px 0 0 0;"><strong>Shipping to:</strong><br>${address}</p>`
-          : ''
-      }
+    <div style="display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 2px solid #18181b;">
+      <table role="presentation" style="border-collapse: collapse;"><tr>
+        <td style="font-size: 13px; color: #71717a; padding-right: 16px;">Total</td>
+        <td style="font-size: 18px; font-weight: 700; color: #18181b; text-align: right;">${formatCurrency(payload.totalAmount)}</td>
+      </tr></table>
+    </div>
 
-      <div style="text-align: center; margin-top: 32px;">
-        <a href="${invoiceUrl}" style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 100px; padding: 14px 32px; font-size: 14px; font-weight: 600;">
-          View invoice
-        </a>
-      </div>
-    `
-  );
+    ${invoiceButton(invoiceUrl)}
+
+    <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin: 24px 0 0 0;">Thank you for shopping with NexusCart.</p>
+  `);
 
   const text = `Order #${shortOrderId(payload.orderId)} confirmed. Total: ${formatCurrency(payload.totalAmount)}. View your invoice at ${invoiceUrl}`;
 
@@ -148,32 +207,27 @@ export function renderOrderStatusEmail(payload: OrderStatusPayload) {
   const invoiceUrl = `${frontendUrl()}/orders/${payload.orderId}/invoice`;
   const greeting = payload.customerName ? `Hi ${payload.customerName},` : 'Hi,';
 
-  const html = emailShell(
-    'Order Update',
-    `
-      <p style="font-size: 15px; line-height: 24px; color: #444444; text-align: center; margin: 0 0 24px 0;">
-        ${greeting} your order <strong>#${shortOrderId(payload.orderId)}</strong> status has changed to:
-      </p>
+  const html = emailShell(`
+    ${documentHeader('Order update', payload.orderId)}
 
-      <div style="text-align: center; margin-bottom: 24px;">
-        <span style="display: inline-block; background-color: ${color}1a; color: ${color}; border: 1px solid ${color}55; border-radius: 100px; padding: 8px 24px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">
-          ${payload.status}
-        </span>
-      </div>
+    <p style="font-size: 14px; line-height: 22px; color: #52525b; text-align: center; margin: 0 0 24px 0;">
+      ${greeting} your order status has changed to:
+    </p>
 
-      ${
-        payload.totalAmount !== undefined
-          ? `<p style="font-size: 14px; line-height: 22px; color: #71717a; text-align: center; margin: 0;">Order total: <strong style="color:#18181b;">${formatCurrency(payload.totalAmount)}</strong></p>`
-          : ''
-      }
+    <div style="text-align: center; margin-bottom: 24px;">
+      <span style="display: inline-block; background-color: ${color}1a; color: ${color}; border: 1px solid ${color}55; border-radius: 100px; padding: 8px 24px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">
+        ${payload.status}
+      </span>
+    </div>
 
-      <div style="text-align: center; margin-top: 32px;">
-        <a href="${invoiceUrl}" style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; border-radius: 100px; padding: 14px 32px; font-size: 14px; font-weight: 600;">
-          View invoice
-        </a>
-      </div>
-    `
-  );
+    ${
+      payload.totalAmount !== undefined
+        ? `<p style="font-size: 14px; line-height: 22px; color: #71717a; text-align: center; margin: 0;">Order total: <strong style="color:#18181b;">${formatCurrency(payload.totalAmount)}</strong></p>`
+        : ''
+    }
+
+    ${invoiceButton(invoiceUrl)}
+  `);
 
   const text = `Order #${shortOrderId(payload.orderId)} is now ${payload.status}. View your invoice at ${invoiceUrl}`;
 
