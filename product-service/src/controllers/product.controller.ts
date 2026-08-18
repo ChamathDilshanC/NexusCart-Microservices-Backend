@@ -43,10 +43,13 @@ async function enrichWithPromotions(products: any[]) {
   return products.map((p) => applyBestPromotion(p.toObject(), activePromotions));
 }
 
-// Public: Get all products with optional search, filter, and sort
+// Public: Get all products with optional search, filter, and sort.
+// When `page` is supplied, responds with a { items, total, page, pageSize, totalPages }
+// envelope instead of a bare array — callers that don't paginate (admin dashboard,
+// product-detail related products, metrics) are unaffected.
 export const getAllProducts = async (req: any, res: Response) => {
   try {
-    const { search, category, sort, isFeatured } = req.query;
+    const { search, category, sort, isFeatured, page, limit } = req.query;
     const filter: any = {};
 
     if (search && typeof search === 'string') {
@@ -59,7 +62,8 @@ export const getAllProducts = async (req: any, res: Response) => {
     }
 
     if (category && typeof category === 'string') {
-      filter.category = category;
+      const cats = category.split(',').map((c) => c.trim()).filter(Boolean);
+      filter.category = cats.length > 1 ? { $in: cats } : cats[0];
     }
 
     if (isFeatured === 'true') {
@@ -78,7 +82,23 @@ export const getAllProducts = async (req: any, res: Response) => {
     const sortFn = sortFns[sort as string] || sortFns.newest;
     products.sort(sortFn);
 
-    res.status(200).json(await enrichWithPromotions(products));
+    if (!page) {
+      return res.status(200).json(await enrichWithPromotions(products));
+    }
+
+    const pageNum = Math.max(1, Number.parseInt(page as string, 10) || 1);
+    const pageSize = Math.max(1, Number.parseInt(limit as string, 10) || 12);
+    const total = products.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const pageProducts = products.slice((pageNum - 1) * pageSize, pageNum * pageSize);
+
+    res.status(200).json({
+      items: await enrichWithPromotions(pageProducts),
+      total,
+      page: pageNum,
+      pageSize,
+      totalPages
+    });
   } catch (error) {
     console.error('getAllProducts error:', error);
     res.status(500).json({ message: 'Error fetching products', error: (error as Error).message });

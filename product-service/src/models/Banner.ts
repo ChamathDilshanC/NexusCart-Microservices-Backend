@@ -5,6 +5,7 @@ export interface IBanner extends Document {
   subtitle?: string;
   imageUrl: string;
   linkUrl?: string;
+  productId?: mongoose.Types.ObjectId;
   order: number;
   isActive: boolean;
   templateIds: mongoose.Types.ObjectId[];
@@ -17,6 +18,8 @@ const BannerSchema: Schema = new Schema({
   subtitle: { type: String },
   imageUrl: { type: String, required: true },
   linkUrl: { type: String },
+  // Optional: when set, the banner links straight to this product instead of linkUrl.
+  productId: { type: Schema.Types.ObjectId, ref: 'Product' },
   order: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   // Which banner template(s) this banner shows under. Empty = every template.

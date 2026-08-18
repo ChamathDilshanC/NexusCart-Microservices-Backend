@@ -30,12 +30,13 @@ export const getAllBanners = async (req: AuthRequest, res: Response) => {
 // Admin: Create banner
 export const createBanner = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, subtitle, imageUrl, linkUrl, order, isActive, templateIds } = req.body;
+    const { title, subtitle, imageUrl, linkUrl, productId, order, isActive, templateIds } = req.body;
     const banner = new Banner({
       title,
       subtitle: subtitle || '',
       imageUrl,
       linkUrl: linkUrl || '',
+      productId: productId || undefined,
       order: order ?? 0,
       isActive: isActive ?? true,
       templateIds: Array.isArray(templateIds) ? templateIds : []
@@ -51,7 +52,10 @@ export const createBanner = async (req: AuthRequest, res: Response) => {
 // Admin: Update banner
 export const updateBanner = async (req: AuthRequest, res: Response) => {
   try {
-    const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const update = { ...req.body };
+    // An empty string means "untag the product" — Mongoose can't cast "" to an ObjectId.
+    if (update.productId === '') update.productId = null;
+    const banner = await Banner.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
     if (!banner) return res.status(404).json({ message: 'Banner not found' });
     res.status(200).json({ message: 'Banner updated', banner });
   } catch (error) {

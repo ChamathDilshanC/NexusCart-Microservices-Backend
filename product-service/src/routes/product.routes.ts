@@ -9,6 +9,7 @@ import {
   deleteBannerTemplate
 } from '../controllers/bannerTemplate.controller';
 import { getAllPromotions, createPromotion, updatePromotion, deletePromotion } from '../controllers/promotion.controller';
+import { getCurrencySettings, updateCurrencySettings, getExchangeRates } from '../controllers/settings.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
 
 const router = Router();
@@ -18,6 +19,8 @@ router.get('/', getAllProducts);
 router.get('/categories', getCategories);
 router.get('/banners', getActiveBanners);
 router.get('/banner-templates', getActiveBannerTemplates);
+router.get('/settings/currency', getCurrencySettings);
+router.get('/exchange-rates', getExchangeRates);
 router.get('/:id', getProductById);
 
 // Admin-only routes
@@ -42,5 +45,8 @@ router.get('/promotions-admin/all', authenticate, authorizeRole(['Admin']), getA
 router.post('/promotions', authenticate, authorizeRole(['Admin']), createPromotion);
 router.put('/promotions/:id', authenticate, authorizeRole(['Admin']), updatePromotion);
 router.delete('/promotions/:id', authenticate, authorizeRole(['Admin']), deletePromotion);
+
+// Currency settings admin route
+router.put('/settings/currency', authenticate, authorizeRole(['Admin']), updateCurrencySettings);
 
 export default router;

@@ -5,7 +5,8 @@ import {
   getAllOrders, updateOrderStatus,
   getAllBanners, createBanner, updateBanner, deleteBanner,
   getAllBannerTemplates, createBannerTemplate, updateBannerTemplate, deleteBannerTemplate,
-  getAllPromotions, createPromotion, updatePromotion, deletePromotion
+  getAllPromotions, createPromotion, updatePromotion, deletePromotion,
+  getCurrencySettings, updateCurrencySettings
 } from '../controllers/admin.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
 
@@ -48,5 +49,9 @@ router.get('/promotions', getAllPromotions);
 router.post('/promotions', createPromotion);
 router.put('/promotions/:id', updatePromotion);
 router.delete('/promotions/:id', deletePromotion);
+
+// Currency settings (proxied to product-service)
+router.get('/settings/currency', getCurrencySettings);
+router.put('/settings/currency', updateCurrencySettings);
 
 export default router;

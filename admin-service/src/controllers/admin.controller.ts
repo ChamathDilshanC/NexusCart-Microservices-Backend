@@ -321,3 +321,33 @@ export const deletePromotion = async (req: AuthRequest, res: Response) => {
     res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting promotion', detail: error.response?.data || error.message });
   }
 };
+
+// Currency settings (proxy to product-service)
+export const getCurrencySettings = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.get(`${productServiceUrl()}/products/settings/currency`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('getCurrencySettings proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: 'Error fetching currency settings', detail: error.response?.data || error.message });
+  }
+};
+
+export const updateCurrencySettings = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.put(`${productServiceUrl()}/products/settings/currency`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('updateCurrencySettings proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating currency settings', detail: error.response?.data || error.message });
+  }
+};
