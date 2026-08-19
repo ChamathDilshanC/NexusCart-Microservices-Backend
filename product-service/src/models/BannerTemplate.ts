@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type BannerLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar' | 'showcase';
+export type BannerLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar' | 'showcase' | 'bento' | 'marquee';
 export type BannerPosition = 'top' | 'above-grid' | 'bottom' | 'sidebar';
 
 export interface IBannerTemplate extends Document {
@@ -39,6 +39,18 @@ export interface IBannerTemplate extends Document {
       intervalMs: number;
       showArrows: boolean;
     };
+    // Asymmetric grid — the first `featuredCount` banners render as large
+    // tiles, the rest fill in as smaller cells around them.
+    bento: {
+      featuredCount: number;
+      showSubtitle: boolean;
+    };
+    // Continuous auto-scrolling strip of banners, looping infinitely.
+    marquee: {
+      speed: 'slow' | 'normal' | 'fast';
+      direction: 'left' | 'right';
+      pauseOnHover: boolean;
+    };
   };
   createdAt: Date;
   updatedAt: Date;
@@ -46,7 +58,7 @@ export interface IBannerTemplate extends Document {
 
 const BannerTemplateSchema: Schema = new Schema({
   name: { type: String, required: true },
-  layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar', 'showcase'], default: 'carousel' },
+  layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar', 'showcase', 'bento', 'marquee'], default: 'carousel' },
   position: { type: String, enum: ['top', 'above-grid', 'bottom', 'sidebar'], default: 'top' },
   isActive: { type: Boolean, default: true },
   order: { type: Number, default: 0 },
@@ -75,6 +87,15 @@ const BannerTemplateSchema: Schema = new Schema({
       autoAdvance: { type: Boolean, default: true },
       intervalMs: { type: Number, default: 5000, min: 2000, max: 10000 },
       showArrows: { type: Boolean, default: true }
+    },
+    bento: {
+      featuredCount: { type: Number, enum: [1, 2], default: 1 },
+      showSubtitle: { type: Boolean, default: true }
+    },
+    marquee: {
+      speed: { type: String, enum: ['slow', 'normal', 'fast'], default: 'normal' },
+      direction: { type: String, enum: ['left', 'right'], default: 'left' },
+      pauseOnHover: { type: Boolean, default: true }
     }
   }
 }, { timestamps: true });
