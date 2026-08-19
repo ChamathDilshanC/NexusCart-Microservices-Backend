@@ -2,11 +2,15 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export type BannerLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar' | 'showcase' | 'bento' | 'marquee';
 export type BannerPosition = 'top' | 'above-grid' | 'bottom' | 'sidebar';
+// How prominent the banner block is on screen — every layout maps this to
+// its own height/width scale (see BANNER_SIZE_* tables on the frontend).
+export type BannerSize = 'small' | 'medium' | 'large' | 'full';
 
 export interface IBannerTemplate extends Document {
   name: string;
   layout: BannerLayout;
   position: BannerPosition;
+  size: BannerSize;
   isActive: boolean;
   order: number;
   options: {
@@ -15,7 +19,6 @@ export interface IBannerTemplate extends Document {
       intervalMs: number;
       showArrows: boolean;
       showDots: boolean;
-      height: 'compact' | 'standard' | 'tall';
     };
     grid: {
       columns: number;
@@ -60,6 +63,7 @@ const BannerTemplateSchema: Schema = new Schema({
   name: { type: String, required: true },
   layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar', 'showcase', 'bento', 'marquee'], default: 'carousel' },
   position: { type: String, enum: ['top', 'above-grid', 'bottom', 'sidebar'], default: 'top' },
+  size: { type: String, enum: ['small', 'medium', 'large', 'full'], default: 'medium' },
   isActive: { type: Boolean, default: true },
   order: { type: Number, default: 0 },
   options: {
@@ -67,8 +71,7 @@ const BannerTemplateSchema: Schema = new Schema({
       autoAdvance: { type: Boolean, default: true },
       intervalMs: { type: Number, default: 5000, min: 2000, max: 10000 },
       showArrows: { type: Boolean, default: true },
-      showDots: { type: Boolean, default: true },
-      height: { type: String, enum: ['compact', 'standard', 'tall'], default: 'standard' }
+      showDots: { type: Boolean, default: true }
     },
     grid: {
       columns: { type: Number, enum: [2, 3, 4], default: 3 },
