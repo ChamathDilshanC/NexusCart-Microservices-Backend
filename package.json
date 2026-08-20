@@ -15,6 +15,7 @@
     "install:all": "npm install && cd api-gateway && npm install && cd ../auth-service && npm install && cd ../business-service && npm install && cd ../product-service && npm install && cd ../admin-service && npm install && cd ../order-service && npm install && cd ../payment-service && npm install && cd ../notification-service && npm install && cd ../review-rating-service && npm install"
   },
   "dependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "mongoose": "^9.9.3"
   }
 }

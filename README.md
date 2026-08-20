@@ -43,7 +43,7 @@ graph TD
         Review[⭐ Review Service<br/>:5008]
     end
     
-    DB[(🍃 MongoDB)]
+    DB[(🍃 Mongo API<br/>Oracle Autonomous JSON DB)]
 
     Client -->|HTTP / API Requests| Gateway
     
@@ -95,11 +95,11 @@ sequenceDiagram
 ## 💻 Tech Stack
 - **Runtime:** Node.js (TypeScript)
 - **Framework:** Express.js
-- **Database:** MongoDB / Mongoose ODM
+- **Database:** Mongoose ODM over the Oracle Database API for MongoDB, backed by Oracle Autonomous JSON Database (previously Azure Cosmos DB)
 - **Inter-Service Communication:** Axios (REST)
 - **Authentication:** JWT (JSON Web Tokens)
 - **Containerization:** Docker & Docker Compose
-- **Cloud Readiness:** Microsoft Azure (Container Apps / ACR)
+- **Cloud Readiness:** Microsoft Azure (Container Apps / ACR) for compute, Oracle Cloud Infrastructure for the database
 
 ---
 
