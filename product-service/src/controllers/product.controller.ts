@@ -115,6 +115,33 @@ export const getCategories = async (req: any, res: Response) => {
   }
 };
 
+// Admin: Rename a category across every product that uses it
+export const renameCategory = async (req: AuthRequest, res: Response) => {
+  try {
+    const oldName = req.params.name;
+    const { newName } = req.body;
+    if (!newName || typeof newName !== 'string' || !newName.trim()) {
+      return res.status(400).json({ message: 'newName is required' });
+    }
+
+    const result = await Product.updateMany({ category: oldName }, { $set: { category: newName.trim() } });
+    res.status(200).json({ message: 'Category renamed', updatedCount: result.modifiedCount });
+  } catch (error) {
+    res.status(500).json({ message: 'Error renaming category' });
+  }
+};
+
+// Admin: Delete a category, moving its products to "Uncategorized"
+export const deleteCategory = async (req: AuthRequest, res: Response) => {
+  try {
+    const name = req.params.name;
+    const result = await Product.updateMany({ category: name }, { $set: { category: 'Uncategorized' } });
+    res.status(200).json({ message: 'Category deleted', updatedCount: result.modifiedCount });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting category' });
+  }
+};
+
 // Public: Get single product by ID
 export const getProductById = async (req: any, res: Response) => {
   try {

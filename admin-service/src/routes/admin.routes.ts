@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getAllUsers, getSystemMetrics,
   getAllProducts, createProduct, updateProduct, deleteProduct,
+  renameCategory, deleteCategory,
   getAllOrders, updateOrderStatus,
   getAllBanners, createBanner, updateBanner, deleteBanner,
   getAllBannerTemplates, createBannerTemplate, updateBannerTemplate, deleteBannerTemplate,
@@ -27,6 +28,10 @@ router.get('/products', getAllProducts);
 router.post('/products', createProduct);
 router.put('/products/:id', updateProduct);
 router.delete('/products/:id', deleteProduct);
+
+// Category management (proxied to product-service)
+router.put('/categories/:name', renameCategory);
+router.delete('/categories/:name', deleteCategory);
 
 // Order management (proxied to order-service)
 router.get('/orders', getAllOrders);

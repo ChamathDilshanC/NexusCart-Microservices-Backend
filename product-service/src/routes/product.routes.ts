@@ -1,5 +1,14 @@
 import { Router } from 'express';
-import { createProduct, getAllProducts, getProductById, updateProduct, deleteProduct, getCategories } from '../controllers/product.controller';
+import {
+  createProduct,
+  getAllProducts,
+  getProductById,
+  updateProduct,
+  deleteProduct,
+  getCategories,
+  renameCategory,
+  deleteCategory
+} from '../controllers/product.controller';
 import { getActiveBanners, getAllBanners, createBanner, updateBanner, deleteBanner } from '../controllers/banner.controller';
 import {
   getActiveBannerTemplates,
@@ -25,6 +34,8 @@ router.get('/:id', getProductById);
 
 // Admin-only routes
 router.post('/', authenticate, authorizeRole(['Admin']), createProduct);
+router.put('/categories/:name', authenticate, authorizeRole(['Admin']), renameCategory);
+router.delete('/categories/:name', authenticate, authorizeRole(['Admin']), deleteCategory);
 router.put('/:id', authenticate, authorizeRole(['Admin']), updateProduct);
 router.delete('/:id', authenticate, authorizeRole(['Admin']), deleteProduct);
 

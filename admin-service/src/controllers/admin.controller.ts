@@ -114,6 +114,41 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Category management (proxy to product-service)
+export const renameCategory = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.put(
+      `${productServiceUrl()}/products/categories/${encodeURIComponent(req.params.name)}`,
+      req.body,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authHeader ? { Authorization: authHeader } : {})
+        }
+      }
+    );
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('renameCategory proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error renaming category', detail: error.response?.data || error.message });
+  }
+};
+
+export const deleteCategory = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.delete(
+      `${productServiceUrl()}/products/categories/${encodeURIComponent(req.params.name)}`,
+      { headers: authHeader ? { Authorization: authHeader } : {} }
+    );
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('deleteCategory proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting category', detail: error.response?.data || error.message });
+  }
+};
+
 // Admin: Get all orders (proxy to order-service)
 export const getAllOrders = async (req: AuthRequest, res: Response) => {
   try {
