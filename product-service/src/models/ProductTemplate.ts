@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type ProductTemplateLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar' | 'showcase' | 'bento' | 'marquee';
+export type ProductTemplateLayout = 'carousel' | 'grid' | 'spotlight' | 'sidebar' | 'showcase' | 'bento' | 'marquee' | 'cinematic';
 export type ProductTemplatePosition = 'top' | 'above-grid' | 'bottom' | 'sidebar';
 export type ProductTemplateSize = 'small' | 'medium' | 'large' | 'full';
 
@@ -54,6 +54,12 @@ export interface IProductTemplate extends Document {
       direction: 'left' | 'right';
       pauseOnHover: boolean;
     };
+    cinematic: {
+      autoAdvance: boolean;
+      intervalMs: number;
+      showProgressBar: boolean;
+      kenBurnsEffect: boolean;
+    };
   };
   createdAt: Date;
   updatedAt: Date;
@@ -61,7 +67,7 @@ export interface IProductTemplate extends Document {
 
 const ProductTemplateSchema: Schema = new Schema({
   name: { type: String, required: true },
-  layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar', 'showcase', 'bento', 'marquee'], default: 'grid' },
+  layout: { type: String, enum: ['carousel', 'grid', 'spotlight', 'sidebar', 'showcase', 'bento', 'marquee', 'cinematic'], default: 'grid' },
   position: { type: String, enum: ['top', 'above-grid', 'bottom', 'sidebar'], default: 'top' },
   size: { type: String, enum: ['small', 'medium', 'large', 'full'], default: 'medium' },
   isActive: { type: Boolean, default: true },
@@ -100,6 +106,12 @@ const ProductTemplateSchema: Schema = new Schema({
       speed: { type: String, enum: ['slow', 'normal', 'fast'], default: 'normal' },
       direction: { type: String, enum: ['left', 'right'], default: 'left' },
       pauseOnHover: { type: Boolean, default: true }
+    },
+    cinematic: {
+      autoAdvance: { type: Boolean, default: true },
+      intervalMs: { type: Number, default: 6000, min: 3000, max: 15000 },
+      showProgressBar: { type: Boolean, default: true },
+      kenBurnsEffect: { type: Boolean, default: true }
     }
   }
 }, { timestamps: true });
