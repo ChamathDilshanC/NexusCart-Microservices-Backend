@@ -6,6 +6,7 @@ import {
   getAllOrders, updateOrderStatus,
   getAllBanners, createBanner, updateBanner, deleteBanner,
   getAllBannerTemplates, createBannerTemplate, updateBannerTemplate, deleteBannerTemplate,
+  getAllProductTemplates, createProductTemplate, updateProductTemplate, deleteProductTemplate,
   getAllPromotions, createPromotion, updatePromotion, deletePromotion,
   getCurrencySettings, updateCurrencySettings
 } from '../controllers/admin.controller';
@@ -48,6 +49,12 @@ router.get('/banner-templates', getAllBannerTemplates);
 router.post('/banner-templates', createBannerTemplate);
 router.put('/banner-templates/:id', updateBannerTemplate);
 router.delete('/banner-templates/:id', deleteBannerTemplate);
+
+// Product templates (proxied to product-service)
+router.get('/product-templates', getAllProductTemplates);
+router.post('/product-templates', createProductTemplate);
+router.put('/product-templates/:id', updateProductTemplate);
+router.delete('/product-templates/:id', deleteProductTemplate);
 
 // Promotions (proxied to product-service)
 router.get('/promotions', getAllPromotions);

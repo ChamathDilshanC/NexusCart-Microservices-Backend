@@ -298,6 +298,65 @@ export const deleteBannerTemplate = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Product templates (proxy to product-service)
+export const getAllProductTemplates = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.get(`${productServiceUrl()}/products/product-templates-admin/all`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('getAllProductTemplates proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: 'Error fetching product templates', detail: error.response?.data || error.message });
+  }
+};
+
+export const createProductTemplate = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.post(`${productServiceUrl()}/products/product-templates`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(201).json(response.data);
+  } catch (error: any) {
+    console.error('createProductTemplate proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error creating product template', detail: error.response?.data || error.message });
+  }
+};
+
+export const updateProductTemplate = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.put(`${productServiceUrl()}/products/product-templates/${req.params.id}`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('updateProductTemplate proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating product template', detail: error.response?.data || error.message });
+  }
+};
+
+export const deleteProductTemplate = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.delete(`${productServiceUrl()}/products/product-templates/${req.params.id}`, {
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('deleteProductTemplate proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error deleting product template', detail: error.response?.data || error.message });
+  }
+};
+
 // Promotions (proxy to product-service)
 export const getAllPromotions = async (req: AuthRequest, res: Response) => {
   try {

@@ -49,7 +49,7 @@ async function enrichWithPromotions(products: any[]) {
 // product-detail related products, metrics) are unaffected.
 export const getAllProducts = async (req: any, res: Response) => {
   try {
-    const { search, category, sort, isFeatured, page, limit } = req.query;
+    const { search, category, sort, isFeatured, templateId, page, limit } = req.query;
     const filter: any = {};
 
     if (search && typeof search === 'string') {
@@ -68,6 +68,10 @@ export const getAllProducts = async (req: any, res: Response) => {
 
     if (isFeatured === 'true') {
       filter.isFeatured = true;
+    }
+
+    if (templateId && typeof templateId === 'string') {
+      filter.templateIds = templateId;
     }
 
     const products = await Product.find(filter);
@@ -159,7 +163,7 @@ export const getProductById = async (req: any, res: Response) => {
 // Admin: Create product
 export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, price, stock, category, imageUrl, images, isFeatured } = req.body;
+    const { name, description, price, stock, category, imageUrl, images, isFeatured, templateIds } = req.body;
 
     const product = new Product({
       name,
@@ -169,7 +173,8 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       category,
       imageUrl,
       images: images || [],
-      isFeatured: isFeatured || false
+      isFeatured: isFeatured || false,
+      templateIds: Array.isArray(templateIds) ? templateIds : []
     });
 
     await product.save();

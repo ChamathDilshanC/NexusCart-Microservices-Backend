@@ -17,6 +17,13 @@ import {
   updateBannerTemplate,
   deleteBannerTemplate
 } from '../controllers/bannerTemplate.controller';
+import {
+  getActiveProductTemplates,
+  getAllProductTemplates,
+  createProductTemplate,
+  updateProductTemplate,
+  deleteProductTemplate
+} from '../controllers/productTemplate.controller';
 import { getAllPromotions, createPromotion, updatePromotion, deletePromotion } from '../controllers/promotion.controller';
 import { getCurrencySettings, updateCurrencySettings, getExchangeRates } from '../controllers/settings.controller';
 import { authenticate, authorizeRole } from '../middleware/auth';
@@ -28,6 +35,7 @@ router.get('/', getAllProducts);
 router.get('/categories', getCategories);
 router.get('/banners', getActiveBanners);
 router.get('/banner-templates', getActiveBannerTemplates);
+router.get('/product-templates', getActiveProductTemplates);
 router.get('/settings/currency', getCurrencySettings);
 router.get('/exchange-rates', getExchangeRates);
 router.get('/:id', getProductById);
@@ -50,6 +58,12 @@ router.get('/banner-templates-admin/all', authenticate, authorizeRole(['Admin'])
 router.post('/banner-templates', authenticate, authorizeRole(['Admin']), createBannerTemplate);
 router.put('/banner-templates/:id', authenticate, authorizeRole(['Admin']), updateBannerTemplate);
 router.delete('/banner-templates/:id', authenticate, authorizeRole(['Admin']), deleteBannerTemplate);
+
+// Product template admin routes
+router.get('/product-templates-admin/all', authenticate, authorizeRole(['Admin']), getAllProductTemplates);
+router.post('/product-templates', authenticate, authorizeRole(['Admin']), createProductTemplate);
+router.put('/product-templates/:id', authenticate, authorizeRole(['Admin']), updateProductTemplate);
+router.delete('/product-templates/:id', authenticate, authorizeRole(['Admin']), deleteProductTemplate);
 
 // Promotion admin routes
 router.get('/promotions-admin/all', authenticate, authorizeRole(['Admin']), getAllPromotions);
