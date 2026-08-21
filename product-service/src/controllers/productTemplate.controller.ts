@@ -30,7 +30,7 @@ export const getAllProductTemplates = async (req: AuthRequest, res: Response) =>
 // Admin: Create product template
 export const createProductTemplate = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, layout, position, size, isActive, order, applyToAllProducts, options } = req.body;
+    const { name, layout, position, size, isActive, order, applyToAllProducts, isDefaultGrid, options } = req.body;
     const template = new ProductTemplate({
       name,
       layout,
@@ -39,9 +39,14 @@ export const createProductTemplate = async (req: AuthRequest, res: Response) => 
       isActive: isActive ?? true,
       order: order ?? 0,
       applyToAllProducts: applyToAllProducts ?? false,
+      isDefaultGrid: isDefaultGrid ?? false,
       options
     });
     await template.save();
+    // Only one template can be the default grid at a time.
+    if (template.isDefaultGrid) {
+      await ProductTemplate.updateMany({ _id: { $ne: template._id } }, { $set: { isDefaultGrid: false } });
+    }
     res.status(201).json({ message: 'Product template created', template });
   } catch (error) {
     console.error('createProductTemplate error:', error);
@@ -52,6 +57,10 @@ export const createProductTemplate = async (req: AuthRequest, res: Response) => 
 // Admin: Update product template
 export const updateProductTemplate = async (req: AuthRequest, res: Response) => {
   try {
+    // Only one template can be the default grid at a time.
+    if (req.body.isDefaultGrid) {
+      await ProductTemplate.updateMany({ _id: { $ne: req.params.id } }, { $set: { isDefaultGrid: false } });
+    }
     const template = await ProductTemplate.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true

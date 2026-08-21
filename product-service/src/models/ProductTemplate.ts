@@ -14,6 +14,10 @@ export interface IProductTemplate extends Document {
   // When true, this template shows every product in the catalog instead of
   // only the ones individually tagged via Product.templateIds.
   applyToAllProducts: boolean;
+  // When true (grid layout only), this template's columns/rows govern the
+  // main /shop catalog grid's shape instead of the built-in default. Only
+  // one template can be the default grid at a time.
+  isDefaultGrid: boolean;
   options: {
     carousel: {
       autoAdvance: boolean;
@@ -63,6 +67,7 @@ const ProductTemplateSchema: Schema = new Schema({
   isActive: { type: Boolean, default: true },
   order: { type: Number, default: 0 },
   applyToAllProducts: { type: Boolean, default: false },
+  isDefaultGrid: { type: Boolean, default: false },
   options: {
     carousel: {
       autoAdvance: { type: Boolean, default: true },
