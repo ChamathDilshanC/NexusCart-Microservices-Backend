@@ -30,15 +30,16 @@ export const getAllProductTemplates = async (req: AuthRequest, res: Response) =>
 // Admin: Create product template
 export const createProductTemplate = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, position, autoAdvance, intervalMs, isActive, order, applyToAllProducts } = req.body;
+    const { name, layout, position, size, isActive, order, applyToAllProducts, options } = req.body;
     const template = new ProductTemplate({
       name,
+      layout,
       position,
-      autoAdvance: autoAdvance ?? true,
-      intervalMs: intervalMs ?? 5000,
+      size,
       isActive: isActive ?? true,
       order: order ?? 0,
-      applyToAllProducts: applyToAllProducts ?? false
+      applyToAllProducts: applyToAllProducts ?? false,
+      options
     });
     await template.save();
     res.status(201).json({ message: 'Product template created', template });
