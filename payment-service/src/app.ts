@@ -6,6 +6,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+// PayHere's notify (IPN) webhook posts application/x-www-form-urlencoded, not JSON.
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/payments', paymentRoutes);

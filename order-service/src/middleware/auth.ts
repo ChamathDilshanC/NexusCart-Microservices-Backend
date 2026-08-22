@@ -26,3 +26,14 @@ export const authorizeRole = (roles: string[]) => {
     next();
   };
 };
+
+// Server-to-server calls (e.g. payment-service marking an order paid after
+// PayHere's webhook confirms payment) carry no customer JWT at all, so they
+// authenticate with a shared secret instead of authenticate/authorizeRole.
+export const authenticateInternal = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const key = req.header('x-internal-key');
+  if (!key || key !== process.env.INTERNAL_SERVICE_KEY) {
+    return res.status(401).json({ message: 'Invalid internal service key' });
+  }
+  next();
+};
