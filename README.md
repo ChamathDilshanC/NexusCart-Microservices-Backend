@@ -92,6 +92,24 @@ sequenceDiagram
 
 ---
 
+## 📧 Transactional Email (Brevo)
+
+The **Notification Service** and **Auth Service** send all transactional email through the [Brevo](https://www.brevo.com/) API (`@getbrevo/brevo`) — registration/reset OTP codes, order confirmation, order status updates, and invoices. This replaced a per-service Gmail/Nodemailer setup that depended on an app password.
+
+- **`auth-service`** calls Brevo's dynamic-template API directly (`BREVO_OTP_TEMPLATE_ID`, `BREVO_RESET_TEMPLATE_ID`) for registration and password-reset codes — both are code-based (a 6-digit code entered in the app), not link-based.
+- **`notification-service`** owns `src/services/brevoEmailService.ts`, a reusable module (`sendOTPEmail`, `sendPasswordResetEmail`, `sendInvoiceEmail`, `sendRawEmail`) that either renders branded inline HTML or routes through a Brevo dynamic template when `BREVO_*_TEMPLATE_ID` is set. Reference markup for the dashboard-managed templates lives in `src/templates/brevo/*.html`.
+- Order confirmation and status-change emails are still rendered locally (`utils/emailTemplates.ts`) and sent through `sendRawEmail` — same brand shell, sent via Brevo instead of Nodemailer.
+
+Below is the invoice email as an actual recipient sees it (rendered from `notification-service/src/templates/brevo/invoice.html` with sample data):
+
+<p align="center">
+  <img src="./assets/images/notification-service-brevo-invoice-email.png" alt="NexusCart invoice email, rendered from the Brevo template" width="480" />
+</p>
+
+Required env vars (see `.env.example`): `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, plus the optional per-template IDs above and `FRONTEND_URL` (used to build invoice links in order emails).
+
+---
+
 ## 💻 Tech Stack
 - **Runtime:** Node.js (TypeScript)
 - **Framework:** Express.js
