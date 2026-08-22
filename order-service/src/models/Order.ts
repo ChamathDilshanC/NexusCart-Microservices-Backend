@@ -15,6 +15,12 @@ const orderSchema = new mongoose.Schema({
   customerPhone: { type: String },
   items: [orderItemSchema],
   totalAmount: { type: Number, required: true },
+  // Display-only metadata: totalAmount/item.price stay in the store's base
+  // currency (used for revenue totals, payment processing, etc.) — currency
+  // and exchangeRate just record what the customer had selected at checkout,
+  // so order emails can render in that currency instead of the base one.
+  currency: { type: String, default: 'USD' },
+  exchangeRate: { type: Number, default: 1 },
   status: { 
     type: String, 
     enum: ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'],

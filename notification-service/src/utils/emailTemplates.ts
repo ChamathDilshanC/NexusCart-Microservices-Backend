@@ -2,6 +2,7 @@ interface OrderItemPayload {
   name: string;
   quantity: number;
   price: number;
+  imageUrl?: string;
 }
 
 interface OrderConfirmationPayload {
@@ -11,6 +12,8 @@ interface OrderConfirmationPayload {
   status?: string;
   items: OrderItemPayload[];
   totalAmount: number;
+  currency?: string;
+  exchangeRate?: number;
   shippingAddress?: {
     street?: string;
     city?: string;
@@ -26,12 +29,28 @@ interface OrderStatusPayload {
   customerName?: string;
   status: string;
   totalAmount?: number;
+  currency?: string;
+  exchangeRate?: number;
 }
 
 const frontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:3000';
 
-function formatCurrency(amount: number) {
-  return `$${amount.toFixed(2)}`;
+// totalAmount/item.price arrive in the store's base currency (USD) — currency
+// and exchangeRate are what the customer had selected at checkout, captured
+// there since this service has no other way to know a per-viewer display
+// preference. Both default to a 1:1 USD passthrough for orders placed before
+// that was tracked.
+function formatCurrency(amount: number, currency = 'USD', exchangeRate = 1) {
+  const converted = amount * exchangeRate;
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2
+    }).format(converted);
+  } catch {
+    return `${currency} ${converted.toFixed(2)}`;
+  }
 }
 
 function shortOrderId(orderId: string) {
@@ -128,17 +147,33 @@ function billToShipTo(customerName: string | undefined, customerEmail: string | 
   `;
 }
 
-function itemsTable(items: OrderItemPayload[]) {
+// Data: URIs (base64-embedded uploads) work in a browser but are stripped by
+// Gmail and most other mail clients for security reasons, so they'd render
+// as nothing — only pass through image URLs an email client can actually
+// fetch over the network.
+function isEmailSafeImageUrl(url?: string): url is string {
+  return !!url && /^https?:\/\//i.test(url);
+}
+
+function itemsTable(items: OrderItemPayload[], currency?: string, exchangeRate?: number) {
   const rows = items
-    .map(
-      (item) => `
+    .map((item) => {
+      const imageCell = isEmailSafeImageUrl(item.imageUrl)
+        ? `<img src="${item.imageUrl}" alt="${item.name}" width="36" height="36" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; display: block;" />`
+        : `<div style="width: 36px; height: 36px; border-radius: 8px; background-color: #f4f4f5; display: block;"></div>`;
+      return `
         <tr>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #18181b;">${item.name}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #18181b;">
+            <table role="presentation" style="border-collapse: collapse;"><tr>
+              <td style="padding-right: 10px; vertical-align: middle;">${imageCell}</td>
+              <td style="vertical-align: middle;">${item.name}</td>
+            </tr></table>
+          </td>
           <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #71717a; text-align: center;">${item.quantity}</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #71717a; text-align: right;">${formatCurrency(item.price)}</td>
-          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #18181b; font-weight: 500; text-align: right;">${formatCurrency(item.price * item.quantity)}</td>
-        </tr>`
-    )
+          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #71717a; text-align: right;">${formatCurrency(item.price, currency, exchangeRate)}</td>
+          <td style="padding: 10px 0; border-bottom: 1px solid #f4f4f5; font-size: 14px; color: #18181b; font-weight: 500; text-align: right;">${formatCurrency(item.price * item.quantity, currency, exchangeRate)}</td>
+        </tr>`;
+    })
     .join('');
 
   return `
@@ -179,12 +214,12 @@ export function renderOrderConfirmationEmail(payload: OrderConfirmationPayload) 
     </p>
 
     ${billToShipTo(payload.customerName, payload.customerEmail, address)}
-    ${itemsTable(payload.items)}
+    ${itemsTable(payload.items, payload.currency, payload.exchangeRate)}
 
     <div style="display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 2px solid #18181b;">
       <table role="presentation" style="border-collapse: collapse;"><tr>
         <td style="font-size: 13px; color: #71717a; padding-right: 16px;">Total</td>
-        <td style="font-size: 18px; font-weight: 700; color: #18181b; text-align: right;">${formatCurrency(payload.totalAmount)}</td>
+        <td style="font-size: 18px; font-weight: 700; color: #18181b; text-align: right;">${formatCurrency(payload.totalAmount, payload.currency, payload.exchangeRate)}</td>
       </tr></table>
     </div>
 
@@ -193,7 +228,7 @@ export function renderOrderConfirmationEmail(payload: OrderConfirmationPayload) 
     <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin: 24px 0 0 0;">Thank you for shopping with NexusCart.</p>
   `);
 
-  const text = `Order #${shortOrderId(payload.orderId)} confirmed. Total: ${formatCurrency(payload.totalAmount)}. View your invoice at ${invoiceUrl}`;
+  const text = `Order #${shortOrderId(payload.orderId)} confirmed. Total: ${formatCurrency(payload.totalAmount, payload.currency, payload.exchangeRate)}. View your invoice at ${invoiceUrl}`;
 
   return {
     subject: `Order Confirmed — #${shortOrderId(payload.orderId)}`,
@@ -222,7 +257,7 @@ export function renderOrderStatusEmail(payload: OrderStatusPayload) {
 
     ${
       payload.totalAmount !== undefined
-        ? `<p style="font-size: 14px; line-height: 22px; color: #71717a; text-align: center; margin: 0;">Order total: <strong style="color:#18181b;">${formatCurrency(payload.totalAmount)}</strong></p>`
+        ? `<p style="font-size: 14px; line-height: 22px; color: #71717a; text-align: center; margin: 0;">Order total: <strong style="color:#18181b;">${formatCurrency(payload.totalAmount, payload.currency, payload.exchangeRate)}</strong></p>`
         : ''
     }
 

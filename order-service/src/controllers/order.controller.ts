@@ -8,7 +8,7 @@ const notifUrl = () => process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1
 // Authenticated user: Create order
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { items, shippingAddress, customerEmail, customerName, customerPhone } = req.body;
+    const { items, shippingAddress, customerEmail, customerName, customerPhone, currency, exchangeRate } = req.body;
 
     // Calculate total amount
     const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
@@ -20,7 +20,9 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       customerPhone,
       items,
       totalAmount,
-      shippingAddress
+      shippingAddress,
+      currency: currency || 'USD',
+      exchangeRate: typeof exchangeRate === 'number' && exchangeRate > 0 ? exchangeRate : 1
     });
 
     await order.save();
@@ -37,6 +39,8 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         status: order.status,
         items: order.items,
         totalAmount: order.totalAmount,
+        currency: order.currency,
+        exchangeRate: order.exchangeRate,
         shippingAddress: order.shippingAddress,
         createdAt: order.get('createdAt')
       }
@@ -106,7 +110,9 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
         orderId: order._id,
         status,
         items: order.items,
-        totalAmount: order.totalAmount
+        totalAmount: order.totalAmount,
+        currency: order.currency,
+        exchangeRate: order.exchangeRate
       }
     }).catch(err => console.error('Failed to send notification', err.message));
 
