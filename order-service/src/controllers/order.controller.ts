@@ -8,7 +8,7 @@ const notifUrl = () => process.env.NOTIFICATION_SERVICE_URL || 'http://127.0.0.1
 // Authenticated user: Create order
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { items, shippingAddress, customerEmail, customerName } = req.body;
+    const { items, shippingAddress, customerEmail, customerName, customerPhone } = req.body;
 
     // Calculate total amount
     const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
@@ -17,6 +17,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       userId: req.user._id,
       customerEmail,
       customerName,
+      customerPhone,
       items,
       totalAmount,
       shippingAddress
