@@ -202,6 +202,50 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Admin: Adjust stock (stock in / stock out). A separate endpoint rather
+// than folding this into updateProduct so the increment/decrement is
+// atomic ($inc, not read-then-write) and OUT can never push stock negative
+// under concurrent requests — a plain PUT with a client-computed new total
+// can't guarantee either.
+export const adjustStock = async (req: AuthRequest, res: Response) => {
+  try {
+    const { type, quantity, note } = req.body;
+    if (type !== 'IN' && type !== 'OUT') {
+      return res.status(400).json({ message: "type must be 'IN' or 'OUT'" });
+    }
+    const qty = Number(quantity);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      return res.status(400).json({ message: 'quantity must be a positive number' });
+    }
+
+    const movement = { type, quantity: qty, note: note || undefined, createdAt: new Date() };
+    const delta = type === 'IN' ? qty : -qty;
+    // For OUT, only match if there's enough stock — makes the guard part of
+    // the atomic update instead of a separate check-then-write.
+    const query = type === 'OUT' ? { _id: req.params.id, stock: { $gte: qty } } : { _id: req.params.id };
+
+    const product = await Product.findOneAndUpdate(
+      query,
+      {
+        $inc: { stock: delta },
+        $push: { stockHistory: { $each: [movement], $slice: -50 } }
+      },
+      { new: true }
+    );
+
+    if (!product) {
+      const exists = await Product.exists({ _id: req.params.id });
+      if (!exists) return res.status(404).json({ message: 'Product not found' });
+      return res.status(400).json({ message: 'Not enough stock for that adjustment' });
+    }
+
+    res.status(200).json({ message: 'Stock updated', product });
+  } catch (error) {
+    console.error('adjustStock error:', error);
+    res.status(500).json({ message: 'Error adjusting stock', error: (error as Error).message });
+  }
+};
+
 // Admin: Delete product
 export const deleteProduct = async (req: AuthRequest, res: Response) => {
   try {

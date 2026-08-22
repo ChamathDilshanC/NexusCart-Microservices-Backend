@@ -3,9 +3,24 @@ import { AuthRequest } from '../middleware/auth';
 import User from '../models/User';
 import Order from '../models/Order';
 import axios from 'axios';
+import bcrypt from 'bcrypt';
 
 const productServiceUrl = () => process.env.PRODUCT_SERVICE_URL || 'http://127.0.0.1:5003';
 const orderServiceUrl = () => process.env.ORDER_SERVICE_URL || 'http://127.0.0.1:5005';
+
+// The only account allowed to grant or revoke the Admin role. Same env var
+// as auth-service's SUPER_ADMIN_EMAIL, so both stay in sync.
+const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'chamathdilshan.dev@gmail.com';
+
+// admin-service's `authenticate` trusts the JWT's role claim directly rather
+// than re-querying the DB (see middleware/auth.ts) — fine for the existing
+// authorizeRole(['Admin']) gate, but granting/revoking Admin needs the
+// *current* email, which isn't in the JWT at all. This fetches the acting
+// admin's live record to check it.
+async function isActingAsSuperAdmin(req: AuthRequest): Promise<boolean> {
+  const actingAdmin = await User.findById(req.user._id).select('email');
+  return !!actingAdmin && actingAdmin.email === SUPER_ADMIN_EMAIL;
+}
 
 // Admin: Get all users
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
@@ -15,6 +30,102 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('getAllUsers error:', error);
     res.status(500).json({ message: 'Error fetching users', error: (error as Error).message });
+  }
+};
+
+// Admin: Create a user directly — an internal admin tool, so no OTP step;
+// the account is created already verified.
+export const createUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email and password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const requestedRole = role === 'Admin' ? 'Admin' : 'Customer';
+    if (requestedRole === 'Admin' && !(await isActingAsSuperAdmin(req))) {
+      return res.status(403).json({ message: 'Only the super admin can create Admin accounts' });
+    }
+
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: 'A user with that email already exists' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = new User({ name, email, passwordHash, role: requestedRole, isVerified: true });
+    await user.save();
+
+    const { passwordHash: _omit, ...safeUser } = user.toObject();
+    res.status(201).json({ message: 'User created', user: safeUser });
+  } catch (error) {
+    console.error('createUser error:', error);
+    res.status(500).json({ message: 'Error creating user', error: (error as Error).message });
+  }
+};
+
+// Admin: Change a user's role. Granting/revoking Admin is restricted to the
+// super admin; a regular admin can still move accounts between the other
+// roles freely.
+export const updateUserRole = async (req: AuthRequest, res: Response) => {
+  try {
+    const { role } = req.body;
+    if (role !== 'Admin' && role !== 'Customer') {
+      return res.status(400).json({ message: 'Role must be Admin or Customer' });
+    }
+    if (req.params.id === req.user._id) {
+      return res.status(400).json({ message: "You can't change your own role" });
+    }
+
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (targetUser.email === SUPER_ADMIN_EMAIL) {
+      return res.status(400).json({ message: "The super admin's role can't be changed" });
+    }
+
+    if ((role === 'Admin' || targetUser.role === 'Admin') && !(await isActingAsSuperAdmin(req))) {
+      return res.status(403).json({ message: 'Only the super admin can grant or revoke Admin access' });
+    }
+
+    targetUser.role = role;
+    await targetUser.save();
+
+    const { passwordHash: _omit, ...safeUser } = targetUser.toObject();
+    res.status(200).json({ message: 'Role updated', user: safeUser });
+  } catch (error) {
+    console.error('updateUserRole error:', error);
+    res.status(500).json({ message: 'Error updating role', error: (error as Error).message });
+  }
+};
+
+// Admin: Delete a user
+export const deleteUser = async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.params.id === req.user._id) {
+      return res.status(400).json({ message: "You can't delete your own account" });
+    }
+
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (targetUser.email === SUPER_ADMIN_EMAIL) {
+      return res.status(400).json({ message: 'The super admin account cannot be deleted' });
+    }
+    if (targetUser.role === 'Admin' && !(await isActingAsSuperAdmin(req))) {
+      return res.status(403).json({ message: 'Only the super admin can delete an Admin account' });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: 'User deleted' });
+  } catch (error) {
+    console.error('deleteUser error:', error);
+    res.status(500).json({ message: 'Error deleting user', error: (error as Error).message });
   }
 };
 
@@ -97,6 +208,23 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('updateProduct proxy error:', error.message, error.response?.data);
     res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error updating product', detail: error.response?.data || error.message });
+  }
+};
+
+// Admin: Adjust stock (proxy to product-service)
+export const adjustProductStock = async (req: AuthRequest, res: Response) => {
+  try {
+    const authHeader = req.header('Authorization');
+    const response = await axios.patch(`${productServiceUrl()}/products/${req.params.id}/stock`, req.body, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {})
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error('adjustProductStock proxy error:', error.message, error.response?.data);
+    res.status(error.response?.status || 500).json({ message: error.response?.data?.message || 'Error adjusting stock', detail: error.response?.data || error.message });
   }
 };
 

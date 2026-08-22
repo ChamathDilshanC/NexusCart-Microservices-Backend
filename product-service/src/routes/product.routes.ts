@@ -4,6 +4,7 @@ import {
   getAllProducts,
   getProductById,
   updateProduct,
+  adjustStock,
   deleteProduct,
   getCategories,
   renameCategory,
@@ -45,6 +46,7 @@ router.post('/', authenticate, authorizeRole(['Admin']), createProduct);
 router.put('/categories/:name', authenticate, authorizeRole(['Admin']), renameCategory);
 router.delete('/categories/:name', authenticate, authorizeRole(['Admin']), deleteCategory);
 router.put('/:id', authenticate, authorizeRole(['Admin']), updateProduct);
+router.patch('/:id/stock', authenticate, authorizeRole(['Admin']), adjustStock);
 router.delete('/:id', authenticate, authorizeRole(['Admin']), deleteProduct);
 
 // Banner admin routes

@@ -10,6 +10,20 @@ import { OAuth2Client } from 'google-auth-library';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID');
 
+// The only account that ever gets Admin automatically — see googleAuth below.
+// Everyone else can only reach Admin via an existing admin promoting them
+// (admin-service's updateUserRole), never through self-registration.
+const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'chamathdilshan.dev@gmail.com';
+
+// register/verifyOTP and googleAuth both used to accept a client-supplied
+// `role` and store it as-is — the request body is attacker-controlled, so
+// nothing from it may ever reach the User document's role. 'Customer' is
+// the only role a public endpoint may ever assign (the User schema's enum
+// doesn't even include anything else).
+function sanitizeSelfServiceRole(_role: unknown): 'Customer' {
+  return 'Customer';
+}
+
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, name, role } = req.body;
@@ -53,7 +67,7 @@ export const register = async (req: Request, res: Response) => {
         type: 'registration',
         pendingName: name,
         pendingPasswordHash: passwordHash,
-        pendingRole: role || 'Customer',
+        pendingRole: sanitizeSelfServiceRole(role),
         createdAt: new Date()
       },
       { upsert: true, new: true }
@@ -167,8 +181,8 @@ export const googleAuth = async (req: Request, res: Response) => {
     const googleId = payload.sub;
     
     // Determine Role
-    let assignedRole = role || 'Customer';
-    if (email === 'chamathdilshan.dev@gmail.com') {
+    let assignedRole: string = sanitizeSelfServiceRole(role);
+    if (email === SUPER_ADMIN_EMAIL) {
       assignedRole = 'Admin';
     }
     
@@ -182,7 +196,7 @@ export const googleAuth = async (req: Request, res: Response) => {
         user.isVerified = true; // Google accounts are implicitly verified
       }
       // Force Admin role if they are the special user, even if they existed as Customer
-      if (email === 'chamathdilshan.dev@gmail.com' && user.role !== 'Admin') {
+      if (email === SUPER_ADMIN_EMAIL && user.role !== 'Admin') {
         user.role = 'Admin';
       }
       await user.save();

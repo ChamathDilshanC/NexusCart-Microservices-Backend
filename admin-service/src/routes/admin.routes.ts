@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
-  getAllUsers, getSystemMetrics,
-  getAllProducts, createProduct, updateProduct, deleteProduct,
+  getAllUsers, createUser, updateUserRole, deleteUser, getSystemMetrics,
+  getAllProducts, createProduct, updateProduct, adjustProductStock, deleteProduct,
   renameCategory, deleteCategory,
   getAllOrders, updateOrderStatus,
   getAllBanners, createBanner, updateBanner, deleteBanner,
@@ -20,6 +20,9 @@ router.use(authorizeRole(['Admin']));
 
 // User management
 router.get('/users', getAllUsers);
+router.post('/users', createUser);
+router.patch('/users/:id/role', updateUserRole);
+router.delete('/users/:id', deleteUser);
 
 // System metrics
 router.get('/metrics', getSystemMetrics);
@@ -28,6 +31,7 @@ router.get('/metrics', getSystemMetrics);
 router.get('/products', getAllProducts);
 router.post('/products', createProduct);
 router.put('/products/:id', updateProduct);
+router.patch('/products/:id/stock', adjustProductStock);
 router.delete('/products/:id', deleteProduct);
 
 // Category management (proxied to product-service)
