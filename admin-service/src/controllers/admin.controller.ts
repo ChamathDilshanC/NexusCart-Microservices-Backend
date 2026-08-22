@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import User from '../models/User';
+import User, { ADMIN_PERMISSIONS } from '../models/User';
 import Order from '../models/Order';
 import axios from 'axios';
 import bcrypt from 'bcrypt';
@@ -100,6 +100,44 @@ export const updateUserRole = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('updateUserRole error:', error);
     res.status(500).json({ message: 'Error updating role', error: (error as Error).message });
+  }
+};
+
+// Admin: Set which admin console sections a fellow Admin can access. Unlike
+// updateUserRole, this is NOT restricted to the super admin — any admin can
+// shape another admin's access, since it can only ever narrow what they can
+// do, never grant the Admin role itself (that's still super-admin-only,
+// checked above in updateUserRole/createUser). The super admin's own access
+// is always full regardless of this list, so it can't be edited.
+export const updateUserPermissions = async (req: AuthRequest, res: Response) => {
+  try {
+    const { permissions } = req.body;
+    if (!Array.isArray(permissions) || permissions.some((p) => !ADMIN_PERMISSIONS.includes(p))) {
+      return res.status(400).json({ message: `permissions must be an array of: ${ADMIN_PERMISSIONS.join(', ')}` });
+    }
+    if (req.params.id === req.user._id) {
+      return res.status(400).json({ message: "You can't change your own permissions" });
+    }
+
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (targetUser.email === SUPER_ADMIN_EMAIL) {
+      return res.status(400).json({ message: "The super admin already has full access — nothing to set" });
+    }
+    if (targetUser.role !== 'Admin') {
+      return res.status(400).json({ message: 'Only Admin accounts have section permissions' });
+    }
+
+    targetUser.permissions = permissions;
+    await targetUser.save();
+
+    const { passwordHash: _omit, ...safeUser } = targetUser.toObject();
+    res.status(200).json({ message: 'Permissions updated', user: safeUser });
+  } catch (error) {
+    console.error('updateUserPermissions error:', error);
+    res.status(500).json({ message: 'Error updating permissions', error: (error as Error).message });
   }
 };
 

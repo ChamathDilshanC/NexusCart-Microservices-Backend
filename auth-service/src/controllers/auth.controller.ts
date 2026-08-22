@@ -122,7 +122,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
     res.status(200).json({
       message: 'Email verified successfully. Registration complete.',
       token,
-      user: { id: user._id, email: user.email, role: user.role, name: user.name }
+      user: { id: user._id, email: user.email, role: user.role, name: user.name, permissions: user.permissions }
     });
   } catch (error) {
     console.error('Verify OTP Error:', error);
@@ -154,7 +154,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Fix: Proper casting to string for TS
     const token = generateToken((user._id as mongoose.Types.ObjectId).toString(), user.role);
-    res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name } });
+    res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name, permissions: user.permissions } });
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ message: 'Error logging in' });
@@ -213,7 +213,7 @@ export const googleAuth = async (req: Request, res: Response) => {
     }
 
     const token = generateToken((user._id as mongoose.Types.ObjectId).toString(), user.role);
-    res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name } });
+    res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name, permissions: user.permissions } });
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(500).json({ message: 'Error authenticating with Google' });
