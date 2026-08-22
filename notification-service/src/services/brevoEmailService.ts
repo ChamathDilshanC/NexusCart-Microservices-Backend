@@ -7,8 +7,7 @@ type SendTransacEmailRequest = NonNullable<Parameters<BrevoClient['transactional
 // Built lazily (not at module load) so it always picks up BREVO_API_KEY
 // after dotenv has loaded — server.ts calls dotenv.config() after importing
 // this module's dependents, so a top-level client would capture an
-// undefined key permanently. Same pattern as notification.controller.ts's
-// getTransporter().
+// undefined key permanently.
 
 let client: BrevoClient | null = null;
 
@@ -90,6 +89,30 @@ function brandButton(url: string, label: string): string {
       </a>
     </div>
   `;
+}
+
+// --- sendRawEmail -----------------------------------------------------
+//
+// Escape hatch for callers that already have fully-rendered subject/html
+// (e.g. notification.controller.ts's order confirmation/status emails,
+// built from utils/emailTemplates.ts) and just need it sent through Brevo
+// rather than nodemailer.
+
+export async function sendRawEmail(
+  recipientEmail: string,
+  subject: string,
+  html: string,
+  text?: string
+): Promise<boolean> {
+  const email: SendTransacEmailRequest = {
+    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+    to: [{ email: recipientEmail }],
+    subject,
+    htmlContent: html,
+    ...(text ? { textContent: text } : {})
+  };
+
+  return dispatch(email, 'Email');
 }
 
 function formatAmount(amount: number): string {
@@ -241,33 +264,37 @@ export async function sendOTPEmail(recipientEmail: string, otpCode: string): Pro
 // --- sendPasswordResetEmail -----------------------------------------------------
 
 /**
- * Sends a password reset email. Uses the Brevo dynamic template configured
- * via BREVO_RESET_TEMPLATE_ID (see src/templates/brevo/password-reset.html
- * — expects params.resetLink and params.year) when set; otherwise falls
- * back to the built-in inline HTML.
+ * Sends a password reset code email. Uses the Brevo dynamic template
+ * configured via BREVO_RESET_TEMPLATE_ID (see
+ * src/templates/brevo/password-reset.html — expects params.otp and
+ * params.year) when set; otherwise falls back to the built-in inline HTML.
+ *
+ * Code-based, not link-based — matches auth-service's actual reset flow
+ * (a 6-digit code the user enters in the app), not a clickable reset link.
  */
-export async function sendPasswordResetEmail(recipientEmail: string, resetLink: string): Promise<boolean> {
+export async function sendPasswordResetEmail(recipientEmail: string, otpCode: string): Promise<boolean> {
   const email: SendTransacEmailRequest = {
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
     to: [{ email: recipientEmail }],
     ...(RESET_TEMPLATE_ID
       ? {
           templateId: RESET_TEMPLATE_ID,
-          params: { resetLink, year: new Date().getFullYear() }
+          params: { otp: otpCode, year: new Date().getFullYear() }
         }
       : {
-          subject: 'Reset your NexusCart password',
+          subject: 'Your NexusCart Password Reset Code',
           htmlContent: brandShell(`
             <h2 style="font-size: 20px; margin: 0 0 16px 0; text-align: center;">Reset your password</h2>
-            <p style="font-size: 14px; color: #52525b; text-align: center; margin: 0 0 8px 0;">
-              We received a request to reset your password. If you didn't make this request, you can safely ignore this email.
+            <p style="font-size: 14px; color: #52525b; text-align: center; margin: 0 0 24px 0;">
+              We received a request to reset your password. Enter this code in the app to continue. It expires in 10 minutes. If you didn't request this, you can safely ignore this email.
             </p>
-            <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin: 0 0 24px 0;">
-              This link expires in 30 minutes.
-            </p>
-            ${brandButton(resetLink, 'Reset password')}
+            <div style="text-align: center;">
+              <span style="background-color: #18181b; color: #ffffff; border-radius: 100px; padding: 16px 40px; display: inline-block; font-family: ui-monospace, monospace; font-size: 26px; font-weight: 600; letter-spacing: 6px;">
+                ${otpCode}
+              </span>
+            </div>
           `),
-          textContent: `Reset your NexusCart password: ${resetLink} (expires in 30 minutes).`
+          textContent: `Your NexusCart password reset code is ${otpCode}. It expires in 10 minutes.`
         })
   };
 

@@ -1,21 +1,7 @@
 import { Request, Response } from 'express';
 import NotificationLog from '../models/NotificationLog';
-import nodemailer from 'nodemailer';
+import { sendRawEmail } from '../services/brevoEmailService';
 import { renderOrderConfirmationEmail, renderOrderStatusEmail } from '../utils/emailTemplates';
-
-// Created lazily (not at module load) so it always picks up EMAIL_USER/EMAIL_PASS
-// after dotenv has loaded them — server.ts calls dotenv.config() after importing
-// this controller's module graph, so a top-level transporter would capture
-// undefined credentials permanently.
-function getTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-}
 
 export const dispatchNotification = async (req: Request, res: Response) => {
   try {
@@ -26,18 +12,23 @@ export const dispatchNotification = async (req: Request, res: Response) => {
     let status: 'SENT' | 'SKIPPED' | 'FAILED' = 'SKIPPED';
 
     try {
+      let attempted = false;
+      let sent = false;
       if (type === 'EMAIL') {
+        attempted = true;
         const { to, subject, text, html } = payload;
-        await getTransporter().sendMail({ from: process.env.EMAIL_USER, to, subject, text, html });
-        status = 'SENT';
+        sent = await sendRawEmail(to, subject, html, text);
       } else if (type === 'ORDER_CREATED' && payload?.to) {
+        attempted = true;
         const { subject, html, text } = renderOrderConfirmationEmail(payload);
-        await getTransporter().sendMail({ from: `"NexusCart" <${process.env.EMAIL_USER}>`, to: payload.to, subject, text, html });
-        status = 'SENT';
+        sent = await sendRawEmail(payload.to, subject, html, text);
       } else if (type === 'ORDER_UPDATED' && payload?.to) {
+        attempted = true;
         const { subject, html, text } = renderOrderStatusEmail(payload);
-        await getTransporter().sendMail({ from: `"NexusCart" <${process.env.EMAIL_USER}>`, to: payload.to, subject, text, html });
-        status = 'SENT';
+        sent = await sendRawEmail(payload.to, subject, html, text);
+      }
+      if (attempted) {
+        status = sent ? 'SENT' : 'FAILED';
       }
       if (status === 'SENT') console.log(`[NOTIFICATION] Email sent to ${payload?.to || payload?.email}`);
     } catch (sendError: any) {
