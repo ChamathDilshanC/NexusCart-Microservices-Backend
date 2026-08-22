@@ -35,13 +35,13 @@ graph TD
     Client((🌍 Client Applications))
     Gateway[🌐 API Gateway<br/>:5000 · external ingress]
 
-    subgraph Core Services — internal ingress only
+    subgraph Core["Core Services — internal ingress only"]
         Auth[🔐 Auth Service<br/>:5001]
         Product[📦 Product Service<br/>:5003]
         Admin[🛡️ Admin Service<br/>:5004]
     end
 
-    subgraph Transaction Services — internal ingress only
+    subgraph Transaction["Transaction Services — internal ingress only"]
         Order[🛒 Order Service<br/>:5005]
         Payment[💳 Payment Service<br/>:5006]
         Notif[🔔 Notification Service<br/>:5007]
